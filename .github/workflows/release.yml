@@ -1,0 +1,66 @@
+name: Automated GitHub Release
+
+on:
+  push:
+    tags:
+      - 'v*.*.*'
+  workflow_dispatch:
+    inputs:
+      tag_name:
+        description: 'Release version tag (e.g. v1.0.0)'
+        required: true
+        default: 'v1.0.0'
+
+permissions:
+  contents: write
+
+jobs:
+  build-and-release:
+    name: Verify, Build & Publish GitHub Release
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Node.js 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'npm'
+
+      - name: Install Dependencies
+        run: npm install
+
+      - name: Verify TypeScript Types
+        run: npm run lint
+
+      - name: Audit Firestore Security Rules (ESLint)
+        run: npx eslint firestore.rules
+
+      - name: Build Production Application
+        run: npm run build
+
+      - name: Package Production Release Archive
+        run: |
+          tar -czf lifegraph-finops-dist.tar.gz dist server.ts package.json firestore.rules firebase-blueprint.json README.md RELEASE_NOTES.md
+          zip -r lifegraph-finops-dist.zip dist server.ts package.json firestore.rules firebase-blueprint.json README.md RELEASE_NOTES.md
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ github.event.inputs.tag_name || github.ref_name }}
+          name: Release ${{ github.event.inputs.tag_name || github.ref_name }} — LIFEGRAPH FinOps & Payout Admin
+          body_path: RELEASE_NOTES.md
+          draft: false
+          prerelease: false
+          generate_release_notes: true
+          files: |
+            lifegraph-finops-dist.tar.gz
+            lifegraph-finops-dist.zip
+            firestore.rules
+            firebase-blueprint.json
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
