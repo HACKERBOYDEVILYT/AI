@@ -1,0 +1,132 @@
+name: Deploy Website to GitHub Pages
+
+on:
+  push:
+    branches:
+      - main
+      - master
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  pages: write
+  id-token: write
+
+concurrency:
+  group: 'website-pages-deploy'
+  cancel-in-progress: false
+
+jobs:
+  build-and-deploy-branch:
+    name: Build Website & Publish to gh-pages
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Normalize package.json for Public NPM Registry & Install
+        run: |
+          rm -f bun.lock package-lock.json yarn.lock pnpm-lock.yaml
+          node --input-type=commonjs -e '
+            const fs = require("fs");
+            const pkg = JSON.parse(fs.readFileSync("package.json", "utf8"));
+            pkg.dependencies = {
+              "@google/genai": "latest",
+              "@tailwindcss/vite": "latest",
+              "@vitejs/plugin-react": "latest",
+              "dotenv": "latest",
+              "express": "^4.21.2",
+              "firebase": "latest",
+              "lucide-react": "latest",
+              "motion": "latest",
+              "react": "^19.0.0",
+              "react-dom": "^19.0.0",
+              "recharts": "latest",
+              "vite": "latest"
+            };
+            pkg.devDependencies = {
+              "@types/express": "latest",
+              "@types/node": "latest",
+              "@types/react": "^19.0.0",
+              "@types/react-dom": "^19.0.0",
+              "autoprefixer": "latest",
+              "esbuild": "latest",
+              "tailwindcss": "latest",
+              "tsx": "latest",
+              "typescript": "latest"
+            };
+            fs.writeFileSync("package.json", JSON.stringify(pkg, null, 2));
+          '
+          npm install --legacy-peer-deps
+
+      - name: Ensure Firebase Config Exists
+        run: |
+          if [ ! -f firebase-applet-config.json ]; then
+            cat << 'EOF' > firebase-applet-config.json
+          {
+            "projectId": "seraphic-snow-p5w43",
+            "appId": "1:585606005209:web:e85532762cad44667399c8",
+            "apiKey": "AIzaSyBI-M5wMYaKdP1nd45V5ZzymXNmeZtcCKQ",
+            "authDomain": "seraphic-snow-p5w43.firebaseapp.com",
+            "firestoreDatabaseId": "ai-studio-13942140-941b-484d-abbe-15828f04fa91",
+            "storageBucket": "seraphic-snow-p5w43.firebasestorage.app",
+            "messagingSenderId": "585606005209",
+            "measurementId": "",
+            "oAuthClientId": "585606005209-1cqok1pbqaqeoc405kr7d6n7hasn16e0.apps.googleusercontent.com",
+            "recaptchaSiteKey": ""
+          }
+          EOF
+          fi
+
+      - name: Build Production Website (dist)
+        run: |
+          npx vite build
+          cp dist/index.html dist/404.html
+          touch dist/.nojekyll
+
+      - name: Upload Website Build Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: lifegraph-website-dist
+          path: ./dist
+
+      - name: Upload GitHub Pages Artifact
+        uses: actions/upload-pages-artifact@v3
+        continue-on-error: true
+        with:
+          path: './dist'
+
+      - name: Publish Website to gh-pages Branch
+        uses: peaceiris/actions-gh-pages@v4
+        continue-on-error: true
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: ./dist
+          force_orphan: true
+
+  deploy-pages-environment:
+    name: Deploy to GitHub Pages Environment
+    needs: build-and-deploy-branch
+    runs-on: ubuntu-latest
+    continue-on-error: true
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+
+    steps:
+      - name: Auto-Configure GitHub Pages
+        uses: actions/configure-pages@v5
+        continue-on-error: true
+        with:
+          enablement: true
+
+      - name: Deploy Website to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
+        continue-on-error: true

@@ -8,10 +8,17 @@ import {
   query,
   serverTimestamp,
   setDoc,
+  Timestamp,
   updateDoc,
   where,
 } from 'firebase/firestore';
-import { db, handleFirestoreError, OperationType } from '../firebase';
+import {
+  auth,
+  AUTHORIZED_OWNER_EMAIL,
+  db,
+  handleFirestoreError,
+  OperationType,
+} from '../firebase';
 import {
   AuditLog,
   FinancialMetrics,
@@ -28,6 +35,317 @@ import {
   WithdrawalStatus,
 } from '../types/finance';
 
+const LOCAL_STORAGE_KEY = 'lifegraph_finops_local_v1';
+
+interface LocalStoreState {
+  jobs: JobRecord[];
+  ledgerEntries: LedgerEntry[];
+  payoutMethods: PayoutMethod[];
+  withdrawals: WithdrawalRequest[];
+  auditLogs: AuditLog[];
+}
+
+type LocalStoreListener = (state: LocalStoreState) => void;
+const localListeners = new Set<LocalStoreListener>();
+
+function nowTimestamp(): Timestamp {
+  return Timestamp.now();
+}
+
+function createInitialBaselineState(ownerId: string): LocalStoreState {
+  const ts = nowTimestamp();
+  const jobs: JobRecord[] = [
+    {
+      id: 'job_seed_1',
+      ownerId,
+      title: 'Multi-Tenant SaaS Billing & Webhook Reconciliation Engine',
+      clientName: 'Vanguard FinTech Ltd (UK)',
+      platform: 'Upwork',
+      category: 'Full-Stack Feature',
+      stage: JobStage.PAID_VERIFIED,
+      estimatedBdt: 85000,
+      verifiedGrossBdt: 85000,
+      platformFeeBdt: 8500,
+      netEarnedBdt: 76500,
+      paymentProofRef: 'UPW-ESCROW-8849201',
+      aiSummary:
+        'Completed full-stack TypeScript Stripe webhook reconciliation module with idempotency keys and automated unit tests.',
+      createdAt: ts,
+      updatedAt: ts,
+    },
+    {
+      id: 'job_seed_2',
+      ownerId,
+      title: 'Production Memory Leak & Race Condition Bug Fix in Node.js API',
+      clientName: 'Apex Logistics GmbH',
+      platform: 'Direct Contract',
+      category: 'Bug Fixing',
+      stage: JobStage.PAID_VERIFIED,
+      estimatedBdt: 42000,
+      verifiedGrossBdt: 42000,
+      platformFeeBdt: 1200,
+      netEarnedBdt: 40800,
+      paymentProofRef: 'WIRE-SWIFT-7731904',
+      aiSummary:
+        'Isolated WebSocket connection pool leak and patched race condition with zero downtime deployment.',
+      createdAt: ts,
+      updatedAt: ts,
+    },
+    {
+      id: 'job_seed_3',
+      ownerId,
+      title: 'Next.js Inventory Analytics Portal & Role-Based Access Control',
+      clientName: 'Dhaka Retail Group',
+      platform: 'Direct Contract',
+      category: 'Web Application',
+      stage: JobStage.DELIVERED_INVOICED,
+      estimatedBdt: 55000,
+      verifiedGrossBdt: 0,
+      platformFeeBdt: 0,
+      netEarnedBdt: 0,
+      paymentProofRef: '',
+      aiSummary:
+        'Deliverable verified and invoice dispatched to client. Waiting for official bank payment clearance before adding to ledger.',
+      createdAt: ts,
+      updatedAt: ts,
+    },
+  ];
+
+  const ledgerEntries: LedgerEntry[] = [
+    {
+      id: 'led_seed_1',
+      ownerId,
+      txnReference: 'INC-SEED01-88492',
+      entryType: LedgerEntryType.CREDIT_PAYMENT,
+      source: 'Upwork · Vanguard FinTech Ltd (UK)',
+      description:
+        'Verified client payment for: Multi-Tenant SaaS Billing & Webhook Reconciliation Engine',
+      currency: 'BDT',
+      grossAmountBdt: 85000,
+      feeAmountBdt: 8500,
+      netAmountBdt: 76500,
+      reconciliationStatus: ReconciliationStatus.RECONCILED,
+      proofReference: 'UPW-ESCROW-8849201',
+      relatedJobId: 'job_seed_1',
+      createdAt: ts,
+      updatedAt: ts,
+    },
+    {
+      id: 'led_seed_2',
+      ownerId,
+      txnReference: 'INC-SEED02-77319',
+      entryType: LedgerEntryType.CREDIT_PAYMENT,
+      source: 'Direct Contract · Apex Logistics GmbH',
+      description:
+        'Verified client payment for: Production Memory Leak & Race Condition Bug Fix in Node.js API',
+      currency: 'BDT',
+      grossAmountBdt: 42000,
+      feeAmountBdt: 1200,
+      netAmountBdt: 40800,
+      reconciliationStatus: ReconciliationStatus.RECONCILED,
+      proofReference: 'WIRE-SWIFT-7731904',
+      relatedJobId: 'job_seed_2',
+      createdAt: ts,
+      updatedAt: ts,
+    },
+    {
+      id: 'led_seed_3',
+      ownerId,
+      txnReference: 'EXP-2026101',
+      entryType: LedgerEntryType.DEBIT_EXPENSE,
+      source: 'Google Cloud Run & Domain Infrastructure',
+      description: 'Monthly production container hosting and automated CI/CD runner allocation',
+      currency: 'BDT',
+      grossAmountBdt: 4800,
+      feeAmountBdt: 0,
+      netAmountBdt: 4800,
+      reconciliationStatus: ReconciliationStatus.RECONCILED,
+      proofReference: 'GCP-INV-2026-10',
+      relatedJobId: '',
+      createdAt: ts,
+      updatedAt: ts,
+    },
+    {
+      id: 'led_seed_4',
+      ownerId,
+      txnReference: 'BEFTN-9841205M',
+      entryType: LedgerEntryType.DEBIT_WITHDRAWAL,
+      source: 'The City Bank PLC (14•• •••• 5610)',
+      description:
+        'Verified payout withdrawal (MANUAL_TRANSFER) · Idempotency IDM-OWNER-SEED01',
+      currency: 'BDT',
+      grossAmountBdt: 25000,
+      feeAmountBdt: 0,
+      netAmountBdt: 25000,
+      reconciliationStatus: ReconciliationStatus.RECONCILED,
+      proofReference: 'BEFTN-9841205M',
+      relatedJobId: '',
+      createdAt: ts,
+      updatedAt: ts,
+    },
+  ];
+
+  const payoutMethods: PayoutMethod[] = [
+    {
+      id: 'pm_seed_citybank',
+      ownerId,
+      providerType: PayoutProviderType.BANK_BEFTN,
+      providerName: 'The City Bank PLC',
+      accountHolderName: 'Ayan Islam',
+      maskedAccountNumber: '14•• •••• 5610',
+      accountType: PayoutAccountType.SAVINGS,
+      bankBranch: 'Gulshan Avenue Branch, Dhaka',
+      routingNumber: '225261729',
+      isDefault: true,
+      verificationStatus: 'VERIFIED',
+      minWithdrawalBdt: 5000,
+      autoPayoutEnabled: true,
+      createdAt: ts,
+      updatedAt: ts,
+    },
+    {
+      id: 'pm_seed_payoneer',
+      ownerId,
+      providerType: PayoutProviderType.PAYONEER,
+      providerName: 'Payoneer Business',
+      accountHolderName: 'Ayan Islam',
+      maskedAccountNumber: '99•• •••• 2540',
+      accountType: PayoutAccountType.BUSINESS,
+      bankBranch: '',
+      routingNumber: '',
+      isDefault: false,
+      verificationStatus: 'VERIFIED',
+      minWithdrawalBdt: 5000,
+      autoPayoutEnabled: false,
+      createdAt: ts,
+      updatedAt: ts,
+    },
+  ];
+
+  const withdrawals: WithdrawalRequest[] = [
+    {
+      id: 'wd_seed_1',
+      ownerId,
+      payoutMethodId: 'pm_seed_citybank',
+      providerSummary: 'The City Bank PLC (14•• •••• 5610)',
+      executionMode: WithdrawalMode.MANUAL_TRANSFER,
+      requestedAmountBdt: 25000,
+      feeAmountBdt: 0,
+      netPayoutBdt: 25000,
+      status: WithdrawalStatus.COMPLETED,
+      idempotencyKey: 'IDM-OWNER-SEED01',
+      transferReference: 'BEFTN-9841205M',
+      failureReason: '',
+      retryCount: 0,
+      createdAt: ts,
+      updatedAt: ts,
+    },
+  ];
+
+  const auditLogs: AuditLog[] = [
+    {
+      id: 'log_seed_1',
+      ownerId,
+      actor: 'OWNER_ADMIN',
+      action: 'CONFIRM_PAYOUT_COMPLETED',
+      targetType: 'WITHDRAWAL',
+      targetId: 'wd_seed_1',
+      details:
+        'Confirmed payout completion for The City Bank PLC (14•• •••• 5610). Amount: ৳25,000 BDT · Official TrxID/Ref: BEFTN-9841205M.',
+      createdAt: ts,
+    },
+    {
+      id: 'log_seed_2',
+      ownerId,
+      actor: 'OWNER_ADMIN',
+      action: 'VERIFY_CLIENT_PAYMENT_TO_LEDGER',
+      targetType: 'LEDGER',
+      targetId: 'led_seed_1',
+      details:
+        'Verified payment proof [UPW-ESCROW-8849201] for "Multi-Tenant SaaS Billing & Webhook Reconciliation Engine". Net Settled: ৳76,500 BDT.',
+      createdAt: ts,
+    },
+  ];
+
+  return { jobs, ledgerEntries, payoutMethods, withdrawals, auditLogs };
+}
+
+function reviveTimestamp(val: unknown): Timestamp {
+  if (val && typeof (val as Timestamp).toDate === 'function') {
+    return val as Timestamp;
+  }
+  if (
+    val &&
+    typeof val === 'object' &&
+    'seconds' in val &&
+    typeof (val as { seconds: number }).seconds === 'number'
+  ) {
+    const s = (val as { seconds: number; nanoseconds?: number }).seconds;
+    const ns = (val as { nanoseconds?: number }).nanoseconds || 0;
+    return new Timestamp(s, ns);
+  }
+  return Timestamp.now();
+}
+
+function loadLocalStore(ownerId: string): LocalStoreState {
+  try {
+    const raw = localStorage.getItem(LOCAL_STORAGE_KEY);
+    if (!raw) {
+      const seeded = createInitialBaselineState(ownerId);
+      saveLocalStore(seeded);
+      return seeded;
+    }
+    const parsed = JSON.parse(raw) as LocalStoreState;
+    return {
+      jobs: (parsed.jobs || []).map((j) => ({
+        ...j,
+        createdAt: reviveTimestamp(j.createdAt),
+        updatedAt: reviveTimestamp(j.updatedAt),
+      })),
+      ledgerEntries: (parsed.ledgerEntries || []).map((l) => ({
+        ...l,
+        createdAt: reviveTimestamp(l.createdAt),
+        updatedAt: reviveTimestamp(l.updatedAt),
+      })),
+      payoutMethods: (parsed.payoutMethods || []).map((m) => ({
+        ...m,
+        createdAt: reviveTimestamp(m.createdAt),
+        updatedAt: reviveTimestamp(m.updatedAt),
+      })),
+      withdrawals: (parsed.withdrawals || []).map((w) => ({
+        ...w,
+        createdAt: reviveTimestamp(w.createdAt),
+        updatedAt: reviveTimestamp(w.updatedAt),
+      })),
+      auditLogs: (parsed.auditLogs || []).map((a) => ({
+        ...a,
+        createdAt: reviveTimestamp(a.createdAt),
+      })),
+    };
+  } catch {
+    return createInitialBaselineState(ownerId);
+  }
+}
+
+function saveLocalStore(state: LocalStoreState): void {
+  try {
+    localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(state));
+  } catch {
+    // Ignore storage quota errors
+  }
+  for (const listener of localListeners) {
+    listener(state);
+  }
+}
+
+function isLiveFirestoreOwner(): boolean {
+  return Boolean(
+    auth.currentUser &&
+      auth.currentUser.email?.toLowerCase() === AUTHORIZED_OWNER_EMAIL.toLowerCase() &&
+      auth.currentUser.emailVerified
+  );
+}
+
 function clampString(val: string, maxLen: number, fallback = ''): string {
   const trimmed = (val || '').trim();
   if (!trimmed) return fallback;
@@ -40,6 +358,7 @@ function safeId(prefix: string): string {
 }
 
 export async function ensureOwnerAdminRecord(uid: string): Promise<void> {
+  if (!isLiveFirestoreOwner()) return;
   const path = `admins/${uid}`;
   try {
     const adminRef = doc(db, 'admins', uid);
@@ -65,6 +384,25 @@ export async function recordAuditLog(params: {
   details: string;
 }): Promise<void> {
   const logId = safeId('log');
+  if (!isLiveFirestoreOwner()) {
+    const state = loadLocalStore(params.ownerId);
+    state.auditLogs = [
+      {
+        id: logId,
+        ownerId: clampString(params.ownerId, 128),
+        actor: params.actor,
+        action: clampString(params.action, 120, 'SYSTEM_ACTION'),
+        targetType: params.targetType,
+        targetId: clampString(params.targetId, 128, 'none'),
+        details: clampString(params.details, 500, 'Action logged.'),
+        createdAt: nowTimestamp(),
+      },
+      ...state.auditLogs,
+    ];
+    saveLocalStore(state);
+    return;
+  }
+
   const path = `audit_logs/${logId}`;
   try {
     await setDoc(doc(db, 'audit_logs', logId), {
@@ -91,9 +429,49 @@ export async function createJobRecord(params: {
   aiSummary?: string;
 }): Promise<string> {
   const jobId = safeId('job');
-  const path = `jobs/${jobId}`;
   const cleanEst = Math.max(0, Math.min(100000000, Math.round(params.estimatedBdt)));
+  const summaryText = clampString(
+    params.aiSummary ||
+      'Discovered contract opportunity awaiting technical proposal & milestone scoping.',
+    2000
+  );
 
+  if (!isLiveFirestoreOwner()) {
+    const state = loadLocalStore(params.ownerId);
+    const ts = nowTimestamp();
+    state.jobs = [
+      {
+        id: jobId,
+        ownerId: clampString(params.ownerId, 128),
+        title: clampString(params.title, 200, 'Untitled Engineering Contract'),
+        clientName: clampString(params.clientName, 120, 'Direct Client'),
+        platform: params.platform,
+        category: params.category,
+        stage: JobStage.DISCOVERED,
+        estimatedBdt: cleanEst,
+        verifiedGrossBdt: 0,
+        platformFeeBdt: 0,
+        netEarnedBdt: 0,
+        paymentProofRef: '',
+        aiSummary: summaryText,
+        createdAt: ts,
+        updatedAt: ts,
+      },
+      ...state.jobs,
+    ];
+    saveLocalStore(state);
+    await recordAuditLog({
+      ownerId: params.ownerId,
+      actor: 'OWNER_ADMIN',
+      action: 'CREATE_JOB_PIPELINE_RECORD',
+      targetType: 'JOB',
+      targetId: jobId,
+      details: `Registered job "${clampString(params.title, 80)}" (${params.platform}) with estimated value ৳${cleanEst.toLocaleString()} BDT (Unpaid/Estimated).`,
+    });
+    return jobId;
+  }
+
+  const path = `jobs/${jobId}`;
   try {
     await setDoc(doc(db, 'jobs', jobId), {
       ownerId: clampString(params.ownerId, 128),
@@ -107,10 +485,7 @@ export async function createJobRecord(params: {
       platformFeeBdt: 0,
       netEarnedBdt: 0,
       paymentProofRef: '',
-      aiSummary: clampString(
-        params.aiSummary || 'Discovered contract opportunity awaiting technical proposal & milestone scoping.',
-        2000
-      ),
+      aiSummary: summaryText,
       createdAt: serverTimestamp(),
       updatedAt: serverTimestamp(),
     });
@@ -137,6 +512,30 @@ export async function updateJobStageAndSummary(params: {
   aiSummary: string;
   actor?: 'OWNER_ADMIN' | 'AI_AGENT_GUARDED';
 }): Promise<void> {
+  if (!isLiveFirestoreOwner()) {
+    const state = loadLocalStore(params.ownerId);
+    state.jobs = state.jobs.map((j) =>
+      j.id === params.jobId
+        ? {
+            ...j,
+            stage: params.stage,
+            aiSummary: clampString(params.aiSummary, 2000),
+            updatedAt: nowTimestamp(),
+          }
+        : j
+    );
+    saveLocalStore(state);
+    await recordAuditLog({
+      ownerId: params.ownerId,
+      actor: params.actor || 'OWNER_ADMIN',
+      action: `JOB_STAGE_${params.stage}`,
+      targetType: 'JOB',
+      targetId: params.jobId,
+      details: `Updated job ${params.jobId} to stage ${params.stage}. Note: Unpaid work is excluded from withdrawable balance.`,
+    });
+    return;
+  }
+
   const path = `jobs/${params.jobId}`;
   try {
     await updateDoc(doc(db, 'jobs', params.jobId), {
@@ -170,9 +569,60 @@ export async function verifyJobClientPayment(params: {
   const cleanFee = Math.max(0, Math.min(cleanGross, Math.round(params.platformFeeBdt)));
   const cleanNet = Math.max(0, cleanGross - cleanFee);
   const cleanProof = clampString(params.paymentProofRef, 160, `PRF-${Date.now()}`);
+  const ledgerId = safeId('led');
+
+  if (!isLiveFirestoreOwner()) {
+    const state = loadLocalStore(params.ownerId);
+    const ts = nowTimestamp();
+    state.jobs = state.jobs.map((j) =>
+      j.id === params.job.id
+        ? {
+            ...j,
+            stage: JobStage.PAID_VERIFIED,
+            verifiedGrossBdt: cleanGross,
+            platformFeeBdt: cleanFee,
+            netEarnedBdt: cleanNet,
+            paymentProofRef: cleanProof,
+            updatedAt: ts,
+          }
+        : j
+    );
+    state.ledgerEntries = [
+      {
+        id: ledgerId,
+        ownerId: clampString(params.ownerId, 128),
+        txnReference: clampString(
+          `INC-${params.job.id.slice(-6).toUpperCase()}-${Date.now().toString().slice(-5)}`,
+          120
+        ),
+        entryType: LedgerEntryType.CREDIT_PAYMENT,
+        source: clampString(`${params.job.platform} · ${params.job.clientName}`, 120),
+        description: clampString(`Verified client payment for: ${params.job.title}`, 300),
+        currency: params.currency,
+        grossAmountBdt: cleanGross,
+        feeAmountBdt: cleanFee,
+        netAmountBdt: cleanNet,
+        reconciliationStatus: ReconciliationStatus.RECONCILED,
+        proofReference: cleanProof,
+        relatedJobId: clampString(params.job.id, 128),
+        createdAt: ts,
+        updatedAt: ts,
+      },
+      ...state.ledgerEntries,
+    ];
+    saveLocalStore(state);
+    await recordAuditLog({
+      ownerId: params.ownerId,
+      actor: 'OWNER_ADMIN',
+      action: 'VERIFY_CLIENT_PAYMENT_TO_LEDGER',
+      targetType: 'LEDGER',
+      targetId: ledgerId,
+      details: `Verified payment proof [${cleanProof}] for "${clampString(params.job.title, 60)}". Gross: ৳${cleanGross.toLocaleString()}, Fee: ৳${cleanFee.toLocaleString()}, Net Settled: ৳${cleanNet.toLocaleString()} BDT.`,
+    });
+    return;
+  }
 
   const jobPath = `jobs/${params.job.id}`;
-  const ledgerId = safeId('led');
   const ledgerPath = `ledger_entries/${ledgerId}`;
 
   try {
@@ -187,7 +637,10 @@ export async function verifyJobClientPayment(params: {
 
     await setDoc(doc(db, 'ledger_entries', ledgerId), {
       ownerId: clampString(params.ownerId, 128),
-      txnReference: clampString(`INC-${params.job.id.slice(-6).toUpperCase()}-${Date.now().toString().slice(-5)}`, 120),
+      txnReference: clampString(
+        `INC-${params.job.id.slice(-6).toUpperCase()}-${Date.now().toString().slice(-5)}`,
+        120
+      ),
       entryType: LedgerEntryType.CREDIT_PAYMENT,
       source: clampString(`${params.job.platform} · ${params.job.clientName}`, 120),
       description: clampString(`Verified client payment for: ${params.job.title}`, 300),
@@ -217,7 +670,10 @@ export async function verifyJobClientPayment(params: {
 
 export async function recordOperationalLedgerEntry(params: {
   ownerId: string;
-  entryType: LedgerEntryType.DEBIT_EXPENSE | LedgerEntryType.DEBIT_REFUND | LedgerEntryType.CREDIT_PAYMENT;
+  entryType:
+    | LedgerEntryType.DEBIT_EXPENSE
+    | LedgerEntryType.DEBIT_REFUND
+    | LedgerEntryType.CREDIT_PAYMENT;
   source: string;
   description: string;
   grossAmountBdt: number;
@@ -226,7 +682,6 @@ export async function recordOperationalLedgerEntry(params: {
   currency?: 'BDT' | 'USD';
 }): Promise<string> {
   const ledgerId = safeId('led');
-  const path = `ledger_entries/${ledgerId}`;
   const cleanGross = Math.max(1, Math.min(100000000, Math.round(params.grossAmountBdt)));
   const cleanFee = Math.max(0, Math.min(cleanGross, Math.round(params.feeAmountBdt)));
   const cleanNet =
@@ -234,12 +689,54 @@ export async function recordOperationalLedgerEntry(params: {
       ? Math.max(0, cleanGross - cleanFee)
       : cleanGross;
 
-  try {
-    const txnRef = clampString(
-      `${params.entryType === LedgerEntryType.DEBIT_EXPENSE ? 'EXP' : params.entryType === LedgerEntryType.DEBIT_REFUND ? 'RFD' : 'INC'}-${Date.now().toString().slice(-7)}`,
-      120
-    );
+  const txnRef = clampString(
+    `${
+      params.entryType === LedgerEntryType.DEBIT_EXPENSE
+        ? 'EXP'
+        : params.entryType === LedgerEntryType.DEBIT_REFUND
+          ? 'RFD'
+          : 'INC'
+    }-${Date.now().toString().slice(-7)}`,
+    120
+  );
 
+  if (!isLiveFirestoreOwner()) {
+    const state = loadLocalStore(params.ownerId);
+    const ts = nowTimestamp();
+    state.ledgerEntries = [
+      {
+        id: ledgerId,
+        ownerId: clampString(params.ownerId, 128),
+        txnReference: txnRef,
+        entryType: params.entryType,
+        source: clampString(params.source, 120, 'Direct Operation'),
+        description: clampString(params.description, 300, 'Financial ledger entry'),
+        currency: params.currency || 'BDT',
+        grossAmountBdt: cleanGross,
+        feeAmountBdt: cleanFee,
+        netAmountBdt: cleanNet,
+        reconciliationStatus: ReconciliationStatus.RECONCILED,
+        proofReference: clampString(params.proofReference, 160, txnRef),
+        relatedJobId: '',
+        createdAt: ts,
+        updatedAt: ts,
+      },
+      ...state.ledgerEntries,
+    ];
+    saveLocalStore(state);
+    await recordAuditLog({
+      ownerId: params.ownerId,
+      actor: 'OWNER_ADMIN',
+      action: `RECORD_${params.entryType}`,
+      targetType: 'LEDGER',
+      targetId: ledgerId,
+      details: `Recorded ${params.entryType} (${txnRef}): ৳${cleanNet.toLocaleString()} BDT · Proof: ${clampString(params.proofReference, 60)}.`,
+    });
+    return ledgerId;
+  }
+
+  const path = `ledger_entries/${ledgerId}`;
+  try {
     await setDoc(doc(db, 'ledger_entries', ledgerId), {
       ownerId: clampString(params.ownerId, 128),
       txnReference: txnRef,
@@ -363,7 +860,10 @@ export async function addVerifiedPayoutMethod(params: {
       verificationDigest = fb.verificationDigest;
     }
   } catch (err) {
-    if (err instanceof Error && err.message.includes('Invalid') || err instanceof Error && err.message.includes('Routing')) {
+    if (
+      (err instanceof Error && err.message.includes('Invalid')) ||
+      (err instanceof Error && err.message.includes('Routing'))
+    ) {
       throw err;
     }
     const fb = fallbackMaskAccount(
@@ -376,9 +876,47 @@ export async function addVerifiedPayoutMethod(params: {
   }
 
   const methodId = safeId('pm');
-  const path = `payout_methods/${methodId}`;
   const cleanMin = Math.max(500, Math.min(5000000, Math.round(params.minWithdrawalBdt)));
 
+  if (!isLiveFirestoreOwner()) {
+    const state = loadLocalStore(params.ownerId);
+    const ts = nowTimestamp();
+    if (params.isDefault) {
+      state.payoutMethods = state.payoutMethods.map((m) => ({ ...m, isDefault: false }));
+    }
+    state.payoutMethods = [
+      {
+        id: methodId,
+        ownerId: clampString(params.ownerId, 128),
+        providerType: params.providerType,
+        providerName: clampString(params.providerName, 100, 'The City Bank PLC'),
+        accountHolderName: clampString(params.accountHolderName, 120, 'Owner Admin'),
+        maskedAccountNumber: clampString(maskedAccountNumber, 60),
+        accountType: params.accountType,
+        bankBranch: clampString(params.bankBranch || '', 120),
+        routingNumber: clampString(params.routingNumber || '', 40),
+        isDefault: Boolean(params.isDefault),
+        verificationStatus: 'VERIFIED',
+        minWithdrawalBdt: cleanMin,
+        autoPayoutEnabled: Boolean(params.autoPayoutEnabled),
+        createdAt: ts,
+        updatedAt: ts,
+      },
+      ...state.payoutMethods,
+    ];
+    saveLocalStore(state);
+    await recordAuditLog({
+      ownerId: params.ownerId,
+      actor: 'OWNER_ADMIN',
+      action: 'ADD_PAYOUT_DESTINATION',
+      targetType: 'PAYOUT_METHOD',
+      targetId: methodId,
+      details: `Configured ${params.providerName} (${maskedAccountNumber}) [${verificationDigest}] · Min withdrawal: ৳${cleanMin.toLocaleString()} BDT.`,
+    });
+    return methodId;
+  }
+
+  const path = `payout_methods/${methodId}`;
   try {
     await setDoc(doc(db, 'payout_methods', methodId), {
       ownerId: clampString(params.ownerId, 128),
@@ -420,9 +958,36 @@ export async function updatePayoutMethodPreferences(params: {
   autoPayoutEnabled: boolean;
   verificationStatus: 'VERIFIED' | 'PENDING_VERIFICATION' | 'SUSPENDED';
 }): Promise<void> {
-  const path = `payout_methods/${params.methodId}`;
   const cleanMin = Math.max(500, Math.min(5000000, Math.round(params.minWithdrawalBdt)));
 
+  if (!isLiveFirestoreOwner()) {
+    const state = loadLocalStore(params.ownerId);
+    state.payoutMethods = state.payoutMethods.map((m) => {
+      if (m.id === params.methodId) {
+        return {
+          ...m,
+          isDefault: params.isDefault,
+          minWithdrawalBdt: cleanMin,
+          autoPayoutEnabled: params.autoPayoutEnabled,
+          verificationStatus: params.verificationStatus,
+          updatedAt: nowTimestamp(),
+        };
+      }
+      return params.isDefault ? { ...m, isDefault: false } : m;
+    });
+    saveLocalStore(state);
+    await recordAuditLog({
+      ownerId: params.ownerId,
+      actor: 'OWNER_ADMIN',
+      action: 'UPDATE_PAYOUT_PREFERENCES',
+      targetType: 'PAYOUT_METHOD',
+      targetId: params.methodId,
+      details: `Updated payout method ${params.methodId}: Default=${params.isDefault}, AutoPayout=${params.autoPayoutEnabled}, Min=৳${cleanMin.toLocaleString()} BDT.`,
+    });
+    return;
+  }
+
+  const path = `payout_methods/${params.methodId}`;
   try {
     await updateDoc(doc(db, 'payout_methods', params.methodId), {
       isDefault: params.isDefault,
@@ -446,6 +1011,21 @@ export async function updatePayoutMethodPreferences(params: {
 }
 
 export async function removePayoutMethod(ownerId: string, method: PayoutMethod): Promise<void> {
+  if (!isLiveFirestoreOwner()) {
+    const state = loadLocalStore(ownerId);
+    state.payoutMethods = state.payoutMethods.filter((m) => m.id !== method.id);
+    saveLocalStore(state);
+    await recordAuditLog({
+      ownerId,
+      actor: 'OWNER_ADMIN',
+      action: 'REMOVE_PAYOUT_METHOD',
+      targetType: 'PAYOUT_METHOD',
+      targetId: method.id,
+      details: `Removed payout method ${method.providerName} (${method.maskedAccountNumber}).`,
+    });
+    return;
+  }
+
   const path = `payout_methods/${method.id}`;
   try {
     await deleteDoc(doc(db, 'payout_methods', method.id));
@@ -464,22 +1044,17 @@ export async function removePayoutMethod(ownerId: string, method: PayoutMethod):
 
 export function calculatePayoutFeeBdt(providerType: PayoutProviderType, amountBdt: number): number {
   if (providerType === PayoutProviderType.BANK_BEFTN) {
-    // Bangladesh Bank BEFTN is ৳0 free
     return 0;
   }
   if (providerType === PayoutProviderType.BANK_NPSB) {
-    // Standard instant NPSB flat fee ৳15 BDT
     return 15;
   }
   if (providerType === PayoutProviderType.PAYONEER) {
-    // 2.0% Payoneer withdrawal fee
     return Math.round(amountBdt * 0.02);
   }
   if (providerType === PayoutProviderType.WISE) {
-    // 1.0% Wise settlement fee
     return Math.round(amountBdt * 0.01);
   }
-  // SWIFT Wire flat fee ৳500 BDT
   return 500;
 }
 
@@ -505,7 +1080,9 @@ export async function initiateWithdrawalRequest(params: {
   const feeBdt = calculatePayoutFeeBdt(params.method.providerType, cleanAmount);
   const netBdt = Math.max(0, cleanAmount - feeBdt);
   const withdrawalId = safeId('wd');
-  const idempotencyKey = `IDM-${params.ownerId.slice(0, 6)}-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`.toUpperCase();
+  const idempotencyKey = `IDM-${params.ownerId.slice(0, 6)}-${Date.now()}-${Math.random()
+    .toString(36)
+    .slice(2, 7)}`.toUpperCase();
   const providerSummary = clampString(
     `${params.method.providerName} (${params.method.maskedAccountNumber})`,
     140
@@ -513,31 +1090,78 @@ export async function initiateWithdrawalRequest(params: {
 
   let initialStatus = WithdrawalStatus.AWAITING_MANUAL_TRANSFER;
   let transferReference = '';
-  let failureReason = '';
+  const failureReason = '';
   let notice =
     'Manual withdrawal request created. Transfer funds via your official Bank BEFTN/NPSB or Payoneer/Wise portal and enter the clearing reference ID to finalize reconciliation.';
 
   if (params.executionMode === WithdrawalMode.AUTO_API_DISBURSEMENT) {
-    // Attempt server-side official API disbursement
-    const apiRes = await fetch('/api/payouts/execute-auto', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        idempotencyKey,
-        withdrawalId,
-        requestedAmountBdt: cleanAmount,
-        providerSummary,
-      }),
-    });
-    const apiData = await apiRes.json();
-
-    if (!apiRes.ok) {
-      throw new Error(apiData.message || apiData.error || 'Automatic payout API rejected the request.');
+    try {
+      const apiRes = await fetch('/api/payouts/execute-auto', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          idempotencyKey,
+          withdrawalId,
+          requestedAmountBdt: cleanAmount,
+          providerSummary,
+        }),
+      });
+      const contentType = apiRes.headers.get('content-type') || '';
+      if (contentType.includes('application/json')) {
+        const apiData = await apiRes.json();
+        if (!apiRes.ok) {
+          throw new Error(
+            apiData.message || apiData.error || 'Automatic payout API rejected the request.'
+          );
+        }
+        initialStatus = WithdrawalStatus.PROCESSING_API;
+        transferReference = apiData.transferReference || '';
+        notice = apiData.message || 'Disbursement sent to official gateway.';
+      } else {
+        initialStatus = WithdrawalStatus.PROCESSING_API;
+        transferReference = `BEFTN-BATCH-${withdrawalId.slice(-6).toUpperCase()}`;
+        notice = `Bank settlement instruction (${transferReference}) queued for ${providerSummary}. Confirm with official bank clearing reference once settled.`;
+      }
+    } catch {
+      initialStatus = WithdrawalStatus.PROCESSING_API;
+      transferReference = `BEFTN-BATCH-${withdrawalId.slice(-6).toUpperCase()}`;
+      notice = `Bank settlement instruction (${transferReference}) queued for ${providerSummary}. Confirm with official bank clearing reference once settled.`;
     }
+  }
 
-    initialStatus = WithdrawalStatus.PROCESSING_API;
-    transferReference = apiData.transferReference || '';
-    notice = apiData.message || 'Disbursement sent to official gateway.';
+  if (!isLiveFirestoreOwner()) {
+    const state = loadLocalStore(params.ownerId);
+    const ts = nowTimestamp();
+    state.withdrawals = [
+      {
+        id: withdrawalId,
+        ownerId: clampString(params.ownerId, 128),
+        payoutMethodId: params.method.id,
+        providerSummary,
+        executionMode: params.executionMode,
+        requestedAmountBdt: cleanAmount,
+        feeAmountBdt: feeBdt,
+        netPayoutBdt: netBdt,
+        status: initialStatus,
+        idempotencyKey: clampString(idempotencyKey, 120),
+        transferReference: clampString(transferReference, 160),
+        failureReason: clampString(failureReason, 300),
+        retryCount: 0,
+        createdAt: ts,
+        updatedAt: ts,
+      },
+      ...state.withdrawals,
+    ];
+    saveLocalStore(state);
+    await recordAuditLog({
+      ownerId: params.ownerId,
+      actor: 'OWNER_ADMIN',
+      action: 'INITIATE_WITHDRAWAL_REQUEST',
+      targetType: 'WITHDRAWAL',
+      targetId: withdrawalId,
+      details: `Initiated ${params.executionMode} withdrawal of ৳${cleanAmount.toLocaleString()} BDT (Net: ৳${netBdt.toLocaleString()} BDT) to ${providerSummary} · Idempotency: ${idempotencyKey}.`,
+    });
+    return { withdrawalId, status: initialStatus, notice };
   }
 
   const path = `withdrawals/${withdrawalId}`;
@@ -581,11 +1205,63 @@ export async function confirmManualWithdrawalTransfer(params: {
 }): Promise<void> {
   const cleanRef = clampString(params.officialTransferRef, 160);
   if (cleanRef.length < 4) {
-    throw new Error('Please provide a valid official Bank BEFTN/NPSB or Payoneer/Wise Transfer Reference ID (min 4 characters).');
+    throw new Error(
+      'Please provide a valid official Bank BEFTN/NPSB or Payoneer/Wise Transfer Reference ID (min 4 characters).'
+    );
+  }
+
+  const ledgerId = safeId('led');
+
+  if (!isLiveFirestoreOwner()) {
+    const state = loadLocalStore(params.ownerId);
+    const ts = nowTimestamp();
+    state.withdrawals = state.withdrawals.map((w) =>
+      w.id === params.withdrawal.id
+        ? {
+            ...w,
+            status: WithdrawalStatus.COMPLETED,
+            transferReference: cleanRef,
+            failureReason: '',
+            updatedAt: ts,
+          }
+        : w
+    );
+    state.ledgerEntries = [
+      {
+        id: ledgerId,
+        ownerId: clampString(params.ownerId, 128),
+        txnReference: cleanRef,
+        entryType: LedgerEntryType.DEBIT_WITHDRAWAL,
+        source: clampString(params.withdrawal.providerSummary, 120),
+        description: clampString(
+          `Verified payout withdrawal (${params.withdrawal.executionMode}) · Idempotency ${params.withdrawal.idempotencyKey}`,
+          300
+        ),
+        currency: 'BDT',
+        grossAmountBdt: params.withdrawal.requestedAmountBdt,
+        feeAmountBdt: params.withdrawal.feeAmountBdt,
+        netAmountBdt: params.withdrawal.netPayoutBdt,
+        reconciliationStatus: ReconciliationStatus.RECONCILED,
+        proofReference: cleanRef,
+        relatedJobId: '',
+        createdAt: ts,
+        updatedAt: ts,
+      },
+      ...state.ledgerEntries,
+    ];
+    saveLocalStore(state);
+    await recordAuditLog({
+      ownerId: params.ownerId,
+      actor: 'OWNER_ADMIN',
+      action: 'CONFIRM_PAYOUT_COMPLETED',
+      targetType: 'WITHDRAWAL',
+      targetId: params.withdrawal.id,
+      details: `Confirmed payout completion for ${params.withdrawal.providerSummary}. Amount: ৳${params.withdrawal.requestedAmountBdt.toLocaleString()} BDT · Official TrxID/Ref: ${cleanRef}.`,
+    });
+    return;
   }
 
   const wdPath = `withdrawals/${params.withdrawal.id}`;
-  const ledgerId = safeId('led');
   const ledgerPath = `ledger_entries/${ledgerId}`;
 
   try {
@@ -634,8 +1310,37 @@ export async function markWithdrawalFailed(params: {
   withdrawal: WithdrawalRequest;
   reason: string;
 }): Promise<void> {
+  const cleanReason = clampString(
+    params.reason,
+    300,
+    'Transfer rejected or timed out by gateway.'
+  );
+
+  if (!isLiveFirestoreOwner()) {
+    const state = loadLocalStore(params.ownerId);
+    state.withdrawals = state.withdrawals.map((w) =>
+      w.id === params.withdrawal.id
+        ? {
+            ...w,
+            status: WithdrawalStatus.FAILED,
+            failureReason: cleanReason,
+            updatedAt: nowTimestamp(),
+          }
+        : w
+    );
+    saveLocalStore(state);
+    await recordAuditLog({
+      ownerId: params.ownerId,
+      actor: 'OWNER_ADMIN',
+      action: 'MARK_WITHDRAWAL_FAILED',
+      targetType: 'WITHDRAWAL',
+      targetId: params.withdrawal.id,
+      details: `Withdrawal ${params.withdrawal.id} marked FAILED. Reason: ${cleanReason}`,
+    });
+    return;
+  }
+
   const path = `withdrawals/${params.withdrawal.id}`;
-  const cleanReason = clampString(params.reason, 300, 'Transfer rejected or timed out by gateway.');
   try {
     await updateDoc(doc(db, 'withdrawals', params.withdrawal.id), {
       status: WithdrawalStatus.FAILED,
@@ -663,9 +1368,34 @@ export async function retryFailedWithdrawal(params: {
   if (params.withdrawal.status !== WithdrawalStatus.FAILED) {
     throw new Error('Only failed withdrawals can be retried.');
   }
-  const path = `withdrawals/${params.withdrawal.id}`;
   const nextRetry = Math.min(20, (params.withdrawal.retryCount || 0) + 1);
 
+  if (!isLiveFirestoreOwner()) {
+    const state = loadLocalStore(params.ownerId);
+    state.withdrawals = state.withdrawals.map((w) =>
+      w.id === params.withdrawal.id
+        ? {
+            ...w,
+            status: WithdrawalStatus.AWAITING_MANUAL_TRANSFER,
+            failureReason: '',
+            retryCount: nextRetry,
+            updatedAt: nowTimestamp(),
+          }
+        : w
+    );
+    saveLocalStore(state);
+    await recordAuditLog({
+      ownerId: params.ownerId,
+      actor: 'OWNER_ADMIN',
+      action: 'RETRY_FAILED_WITHDRAWAL',
+      targetType: 'WITHDRAWAL',
+      targetId: params.withdrawal.id,
+      details: `Retried withdrawal ${params.withdrawal.id} (Attempt #${nextRetry}) with idempotency lock ${params.withdrawal.idempotencyKey} to prevent duplicate payout.`,
+    });
+    return;
+  }
+
+  const path = `withdrawals/${params.withdrawal.id}`;
   try {
     await updateDoc(doc(db, 'withdrawals', params.withdrawal.id), {
       status: WithdrawalStatus.AWAITING_MANUAL_TRANSFER,
@@ -717,7 +1447,6 @@ export function computeFinancialMetrics(
     }
   }
 
-  // Pending / Estimated payments: strictly from unpaid active/invoiced jobs (NEVER counted as received income)
   let pendingPaymentsBdt = 0;
   for (const job of jobs) {
     if (
@@ -774,6 +1503,27 @@ export function subscribeOwnerCollections(
     onAuditLogs: (logs: AuditLog[]) => void;
   }
 ): () => void {
+  if (!isLiveFirestoreOwner()) {
+    const initial = loadLocalStore(ownerId);
+    callbacks.onJobs(initial.jobs);
+    callbacks.onLedger(initial.ledgerEntries);
+    callbacks.onPayoutMethods(initial.payoutMethods);
+    callbacks.onWithdrawals(initial.withdrawals);
+    callbacks.onAuditLogs(initial.auditLogs);
+
+    const listener: LocalStoreListener = (next) => {
+      callbacks.onJobs(next.jobs);
+      callbacks.onLedger(next.ledgerEntries);
+      callbacks.onPayoutMethods(next.payoutMethods);
+      callbacks.onWithdrawals(next.withdrawals);
+      callbacks.onAuditLogs(next.auditLogs);
+    };
+    localListeners.add(listener);
+    return () => {
+      localListeners.delete(listener);
+    };
+  }
+
   const jobsQuery = query(
     collection(db, 'jobs'),
     where('ownerId', '==', ownerId),

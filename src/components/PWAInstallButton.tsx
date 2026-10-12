@@ -1,8 +1,12 @@
 import React, { useState } from 'react';
-import { Download, Smartphone, X } from 'lucide-react';
+import { Download, FileCode, Smartphone, X } from 'lucide-react';
 import { usePWAInstall } from '../hooks/usePWAInstall';
 
-export const PWAInstallButton: React.FC = () => {
+interface PWAInstallButtonProps {
+  onOpenWorkflowsTab?: () => void;
+}
+
+export const PWAInstallButton: React.FC<PWAInstallButtonProps> = ({ onOpenWorkflowsTab }) => {
   const { isInstallable, isInstalled, isIOS, install } = usePWAInstall();
   const [showInstallModal, setShowInstallModal] = useState(false);
 
@@ -49,17 +53,32 @@ export const PWAInstallButton: React.FC = () => {
                   01. Direct Android APK Download (GitHub Release / Pages)
                 </p>
                 <p>
-                  When deployed via GitHub Actions, the compiled Android package (
-                  <span className="font-mono text-slate-900">lifegraph-finops.apk</span>) is bundled automatically into the release and website root.
+                  When deployed via <span className="font-mono text-slate-900">.github/workflows/release.yml</span>, the compiled Android package (
+                  <span className="font-mono text-slate-900">lifegraph-finops-v1.0.0.apk</span>) is attached to GitHub Releases and bundled into the website root.
                 </p>
-                <a
-                  href="./lifegraph-finops.apk"
-                  download="lifegraph-finops-v1.0.0.apk"
-                  className="inline-flex items-center gap-1.5 px-3.5 py-2 text-xs font-medium text-white bg-slate-900 rounded-md hover:bg-slate-800 transition-colors"
-                >
-                  <Download className="h-3.5 w-3.5" />
-                  Download Android APK (lifegraph-finops.apk)
-                </a>
+                <div className="flex flex-wrap items-center gap-2 pt-1">
+                  <a
+                    href="./lifegraph-finops.apk"
+                    download="lifegraph-finops-v1.0.0.apk"
+                    className="inline-flex items-center gap-1.5 px-3.5 py-2 text-xs font-medium text-white bg-slate-900 rounded-md hover:bg-slate-800 transition-colors"
+                  >
+                    <Download className="h-3.5 w-3.5" />
+                    Download APK (lifegraph-finops.apk)
+                  </a>
+                  {onOpenWorkflowsTab && (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setShowInstallModal(false);
+                        onOpenWorkflowsTab();
+                      }}
+                      className="inline-flex items-center gap-1.5 px-3 py-2 text-xs font-medium text-slate-800 bg-white border border-slate-300 rounded-md hover:bg-slate-100"
+                    >
+                      <FileCode className="h-3.5 w-3.5" />
+                      View release.yml &amp; website.yml
+                    </button>
+                  )}
+                </div>
               </div>
 
               <div className="p-3.5 rounded-md bg-slate-50 border border-slate-200 space-y-2">

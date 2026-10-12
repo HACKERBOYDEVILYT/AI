@@ -1,4 +1,4 @@
-name: Deploy Website & Build Android APK
+name: Deploy Website to GitHub Pages
 
 on:
   push:
@@ -13,29 +13,27 @@ permissions:
   id-token: write
 
 concurrency:
-  group: 'pages-and-apk-deploy'
+  group: 'website-pages-deploy'
   cancel-in-progress: false
 
 jobs:
-  build-web-and-apk:
-    name: Build Website, Compile Android APK & Deploy
+  build-and-deploy-branch:
+    name: Build Website & Publish to gh-pages
     runs-on: ubuntu-latest
-    environment:
-      name: github-pages
-      url: ${{ steps.deployment.outputs.page_url }}
 
     steps:
       - name: Checkout Repository
         uses: actions/checkout@v4
 
-      - name: Setup Node.js 22 (No Lockfile Cache Requirement)
+      - name: Setup Node.js 22
         uses: actions/setup-node@v4
         with:
           node-version: '22'
 
       - name: Normalize package.json for Public NPM Registry & Install
         run: |
-          node -e '
+          rm -f bun.lock package-lock.json yarn.lock pnpm-lock.yaml
+          node --input-type=commonjs -e '
             const fs = require("fs");
             const pkg = JSON.parse(fs.readFileSync("package.json", "utf8"));
             pkg.dependencies = {
@@ -67,59 +65,68 @@ jobs:
           '
           npm install --legacy-peer-deps
 
+      - name: Ensure Firebase Config Exists
+        run: |
+          if [ ! -f firebase-applet-config.json ]; then
+            cat << 'EOF' > firebase-applet-config.json
+          {
+            "projectId": "seraphic-snow-p5w43",
+            "appId": "1:585606005209:web:e85532762cad44667399c8",
+            "apiKey": "AIzaSyBI-M5wMYaKdP1nd45V5ZzymXNmeZtcCKQ",
+            "authDomain": "seraphic-snow-p5w43.firebaseapp.com",
+            "firestoreDatabaseId": "ai-studio-13942140-941b-484d-abbe-15828f04fa91",
+            "storageBucket": "seraphic-snow-p5w43.firebasestorage.app",
+            "messagingSenderId": "585606005209",
+            "measurementId": "",
+            "oAuthClientId": "585606005209-1cqok1pbqaqeoc405kr7d6n7hasn16e0.apps.googleusercontent.com",
+            "recaptchaSiteKey": ""
+          }
+          EOF
+          fi
+
       - name: Build Production Website (dist)
         run: |
           npx vite build
           cp dist/index.html dist/404.html
           touch dist/.nojekyll
 
-      - name: Setup Java JDK 21 for Android APK Build
-        uses: actions/setup-java@v4
-        with:
-          distribution: 'temurin'
-          java-version: '21'
-
-      - name: Setup Android SDK
-        uses: android-actions/setup-android@v3
-
-      - name: Generate Android Project & Compile APK via Capacitor + Gradle
-        run: |
-          npm install --no-save --legacy-peer-deps @capacitor/core@latest @capacitor/cli@latest @capacitor/android@latest
-          rm -rf android
-          npx cap add android
-          npx cap sync android
-          cd android
-          chmod +x gradlew
-          ./gradlew assembleDebug --no-daemon
-          cp app/build/outputs/apk/debug/app-debug.apk ../dist/lifegraph-finops.apk
-          cp app/build/outputs/apk/debug/app-debug.apk ../lifegraph-finops-v1.0.0.apk
-
-      - name: Upload Compiled Android APK Artifact
+      - name: Upload Website Build Artifact
         uses: actions/upload-artifact@v4
         with:
-          name: lifegraph-android-apk
-          path: lifegraph-finops-v1.0.0.apk
+          name: lifegraph-website-dist
+          path: ./dist
 
-      - name: Auto-Enable & Configure GitHub Pages
-        uses: actions/configure-pages@v5
-        with:
-          enablement: true
-        continue-on-error: true
-
-      - name: Upload GitHub Pages Website Artifact
+      - name: Upload GitHub Pages Artifact
         uses: actions/upload-pages-artifact@v3
+        continue-on-error: true
         with:
           path: './dist'
 
-      - name: Deploy Website to GitHub Pages
-        id: deployment
-        uses: actions/deploy-pages@v4
-        continue-on-error: true
-
-      - name: Publish Website + APK to gh-pages Branch
+      - name: Publish Website to gh-pages Branch
         uses: peaceiris/actions-gh-pages@v4
+        continue-on-error: true
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
           publish_dir: ./dist
           force_orphan: true
+
+  deploy-pages-environment:
+    name: Deploy to GitHub Pages Environment
+    needs: build-and-deploy-branch
+    runs-on: ubuntu-latest
+    continue-on-error: true
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+
+    steps:
+      - name: Auto-Configure GitHub Pages
+        uses: actions/configure-pages@v5
+        continue-on-error: true
+        with:
+          enablement: true
+
+      - name: Deploy Website to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
         continue-on-error: true
