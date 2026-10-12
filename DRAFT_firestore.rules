@@ -1,0 +1,333 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // 0. Global Safety Net (Default Deny)
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // 1. Hardened Global Helpers
+    function isValidId(id) {
+      return id is string && id.size() >= 1 && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
+    }
+
+    function incoming() {
+      return request.resource.data;
+    }
+
+    function existing() {
+      return resource.data;
+    }
+
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isVerifiedUser() {
+      return isSignedIn() && request.auth.token.email_verified == true;
+    }
+
+    // Bootstrapped Owner Admin + Trusted DB Admin Lookup (for single-doc get/create/update/delete)
+    function isAdmin() {
+      return isVerifiedUser() && (
+        request.auth.token.email == 'ayanislam10000@gmail.com' ||
+        exists(/databases/$(database)/documents/admins/$(request.auth.uid))
+      );
+    }
+
+    // 2. Entity Validation Blueprints
+    function isValidAdminRecord(data) {
+      return data.keys().hasAll(['uid', 'role', 'createdAt']) &&
+        data.keys().hasOnly(['uid', 'role', 'createdAt']) &&
+        data.uid is string && data.uid.size() >= 1 && data.uid.size() <= 128 && data.uid.matches('^[a-zA-Z0-9_\\-]+$') &&
+        data.uid == request.auth.uid &&
+        data.role is string && data.role.size() <= 32 && data.role in ['OWNER_ADMIN'] &&
+        data.createdAt is timestamp;
+    }
+
+    function isValidJobRecord(data) {
+      return data.keys().hasAll([
+          'ownerId', 'title', 'clientName', 'platform', 'category', 'stage',
+          'estimatedBdt', 'verifiedGrossBdt', 'platformFeeBdt', 'netEarnedBdt',
+          'paymentProofRef', 'aiSummary', 'createdAt', 'updatedAt'
+        ]) &&
+        data.keys().hasOnly([
+          'ownerId', 'title', 'clientName', 'platform', 'category', 'stage',
+          'estimatedBdt', 'verifiedGrossBdt', 'platformFeeBdt', 'netEarnedBdt',
+          'paymentProofRef', 'aiSummary', 'createdAt', 'updatedAt'
+        ]) &&
+        data.ownerId is string && data.ownerId.size() >= 1 && data.ownerId.size() <= 128 && data.ownerId.matches('^[a-zA-Z0-9_\\-]+$') &&
+        data.ownerId == request.auth.uid &&
+        data.title is string && data.title.size() >= 1 && data.title.size() <= 200 &&
+        data.clientName is string && data.clientName.size() >= 1 && data.clientName.size() <= 120 &&
+        data.platform is string && data.platform.size() <= 40 &&
+        data.platform in ['Upwork', 'Fiverr', 'Direct Contract', 'GitHub Bounty', 'Retainer'] &&
+        data.category is string && data.category.size() <= 40 &&
+        data.category in ['Web Application', 'Bug Fixing', 'Full-Stack Feature', 'Security Audit', 'API Integration'] &&
+        data.stage is string && data.stage.size() <= 32 &&
+        data.stage in ['DISCOVERED', 'PROPOSAL_READY', 'IN_PROGRESS', 'DELIVERED_INVOICED', 'PAID_VERIFIED', 'REFUNDED'] &&
+        data.estimatedBdt is number && data.estimatedBdt >= 0 && data.estimatedBdt <= 100000000 &&
+        data.verifiedGrossBdt is number && data.verifiedGrossBdt >= 0 && data.verifiedGrossBdt <= 100000000 &&
+        data.platformFeeBdt is number && data.platformFeeBdt >= 0 && data.platformFeeBdt <= 100000000 &&
+        data.netEarnedBdt is number && data.netEarnedBdt >= 0 && data.netEarnedBdt <= 100000000 &&
+        data.paymentProofRef is string && data.paymentProofRef.size() <= 160 &&
+        data.aiSummary is string && data.aiSummary.size() <= 2000 &&
+        data.createdAt is timestamp &&
+        data.updatedAt is timestamp;
+    }
+
+    function isValidLedgerEntry(data) {
+      return data.keys().hasAll([
+          'ownerId', 'txnReference', 'entryType', 'source', 'description',
+          'currency', 'grossAmountBdt', 'feeAmountBdt', 'netAmountBdt',
+          'reconciliationStatus', 'proofReference', 'relatedJobId', 'createdAt', 'updatedAt'
+        ]) &&
+        data.keys().hasOnly([
+          'ownerId', 'txnReference', 'entryType', 'source', 'description',
+          'currency', 'grossAmountBdt', 'feeAmountBdt', 'netAmountBdt',
+          'reconciliationStatus', 'proofReference', 'relatedJobId', 'createdAt', 'updatedAt'
+        ]) &&
+        data.ownerId is string && data.ownerId.size() >= 1 && data.ownerId.size() <= 128 && data.ownerId.matches('^[a-zA-Z0-9_\\-]+$') &&
+        data.ownerId == request.auth.uid &&
+        data.txnReference is string && data.txnReference.size() >= 1 && data.txnReference.size() <= 120 &&
+        data.entryType is string && data.entryType.size() <= 32 &&
+        data.entryType in ['CREDIT_PAYMENT', 'DEBIT_PLATFORM_FEE', 'DEBIT_EXPENSE', 'DEBIT_REFUND', 'DEBIT_WITHDRAWAL'] &&
+        data.source is string && data.source.size() >= 1 && data.source.size() <= 120 &&
+        data.description is string && data.description.size() >= 1 && data.description.size() <= 300 &&
+        data.currency is string && data.currency.size() <= 10 && data.currency in ['BDT', 'USD'] &&
+        data.grossAmountBdt is number && data.grossAmountBdt >= 0 && data.grossAmountBdt <= 100000000 &&
+        data.feeAmountBdt is number && data.feeAmountBdt >= 0 && data.feeAmountBdt <= 100000000 &&
+        data.netAmountBdt is number && data.netAmountBdt >= 0 && data.netAmountBdt <= 100000000 &&
+        data.reconciliationStatus is string && data.reconciliationStatus.size() <= 32 &&
+        data.reconciliationStatus in ['RECONCILED', 'PENDING_CLEARANCE', 'DISPUTED'] &&
+        data.proofReference is string && data.proofReference.size() >= 1 && data.proofReference.size() <= 160 &&
+        data.relatedJobId is string && data.relatedJobId.size() <= 128 &&
+        data.createdAt is timestamp &&
+        data.updatedAt is timestamp;
+    }
+
+    function isValidPayoutMethod(data) {
+      return data.keys().hasAll([
+          'ownerId', 'providerType', 'providerName', 'accountHolderName',
+          'maskedAccountNumber', 'accountType', 'bankBranch', 'routingNumber',
+          'isDefault', 'verificationStatus', 'minWithdrawalBdt', 'autoPayoutEnabled',
+          'createdAt', 'updatedAt'
+        ]) &&
+        data.keys().hasOnly([
+          'ownerId', 'providerType', 'providerName', 'accountHolderName',
+          'maskedAccountNumber', 'accountType', 'bankBranch', 'routingNumber',
+          'isDefault', 'verificationStatus', 'minWithdrawalBdt', 'autoPayoutEnabled',
+          'createdAt', 'updatedAt'
+        ]) &&
+        data.ownerId is string && data.ownerId.size() >= 1 && data.ownerId.size() <= 128 && data.ownerId.matches('^[a-zA-Z0-9_\\-]+$') &&
+        data.ownerId == request.auth.uid &&
+        data.providerType is string && data.providerType.size() <= 32 &&
+        data.providerType in ['BANK_BEFTN', 'BANK_NPSB', 'PAYONEER', 'WISE', 'SWIFT_WIRE'] &&
+        data.providerName is string && data.providerName.size() >= 1 && data.providerName.size() <= 100 &&
+        data.accountHolderName is string && data.accountHolderName.size() >= 1 && data.accountHolderName.size() <= 120 &&
+        data.maskedAccountNumber is string && data.maskedAccountNumber.size() >= 4 && data.maskedAccountNumber.size() <= 60 &&
+        data.accountType is string && data.accountType.size() <= 32 &&
+        data.accountType in ['PERSONAL', 'MERCHANT', 'SAVINGS', 'CURRENT', 'BUSINESS'] &&
+        data.bankBranch is string && data.bankBranch.size() <= 120 &&
+        data.routingNumber is string && data.routingNumber.size() <= 40 &&
+        data.isDefault is bool &&
+        data.verificationStatus is string && data.verificationStatus.size() <= 32 &&
+        data.verificationStatus in ['VERIFIED', 'PENDING_VERIFICATION', 'SUSPENDED'] &&
+        data.minWithdrawalBdt is number && data.minWithdrawalBdt >= 500 && data.minWithdrawalBdt <= 5000000 &&
+        data.autoPayoutEnabled is bool &&
+        data.createdAt is timestamp &&
+        data.updatedAt is timestamp;
+    }
+
+    function isValidWithdrawalRequest(data) {
+      return data.keys().hasAll([
+          'ownerId', 'payoutMethodId', 'providerSummary', 'executionMode',
+          'requestedAmountBdt', 'feeAmountBdt', 'netPayoutBdt', 'status',
+          'idempotencyKey', 'transferReference', 'failureReason', 'retryCount',
+          'createdAt', 'updatedAt'
+        ]) &&
+        data.keys().hasOnly([
+          'ownerId', 'payoutMethodId', 'providerSummary', 'executionMode',
+          'requestedAmountBdt', 'feeAmountBdt', 'netPayoutBdt', 'status',
+          'idempotencyKey', 'transferReference', 'failureReason', 'retryCount',
+          'createdAt', 'updatedAt'
+        ]) &&
+        data.ownerId is string && data.ownerId.size() >= 1 && data.ownerId.size() <= 128 && data.ownerId.matches('^[a-zA-Z0-9_\\-]+$') &&
+        data.ownerId == request.auth.uid &&
+        data.payoutMethodId is string && data.payoutMethodId.size() >= 1 && data.payoutMethodId.size() <= 128 && data.payoutMethodId.matches('^[a-zA-Z0-9_\\-]+$') &&
+        data.providerSummary is string && data.providerSummary.size() >= 1 && data.providerSummary.size() <= 140 &&
+        data.executionMode is string && data.executionMode.size() <= 32 &&
+        data.executionMode in ['MANUAL_TRANSFER', 'AUTO_API_DISBURSEMENT'] &&
+        data.requestedAmountBdt is number && data.requestedAmountBdt >= 500 && data.requestedAmountBdt <= 100000000 &&
+        data.feeAmountBdt is number && data.feeAmountBdt >= 0 && data.feeAmountBdt <= 100000000 &&
+        data.netPayoutBdt is number && data.netPayoutBdt >= 0 && data.netPayoutBdt <= 100000000 &&
+        data.status is string && data.status.size() <= 32 &&
+        data.status in ['PENDING_APPROVAL', 'AWAITING_MANUAL_TRANSFER', 'PROCESSING_API', 'COMPLETED', 'FAILED', 'CANCELLED'] &&
+        data.idempotencyKey is string && data.idempotencyKey.size() >= 6 && data.idempotencyKey.size() <= 120 &&
+        data.transferReference is string && data.transferReference.size() <= 160 &&
+        data.failureReason is string && data.failureReason.size() <= 300 &&
+        data.retryCount is number && data.retryCount >= 0 && data.retryCount <= 20 &&
+        data.createdAt is timestamp &&
+        data.updatedAt is timestamp;
+    }
+
+    function isValidAuditLog(data) {
+      return data.keys().hasAll([
+          'ownerId', 'actor', 'action', 'targetType', 'targetId', 'details', 'createdAt'
+        ]) &&
+        data.keys().hasOnly([
+          'ownerId', 'actor', 'action', 'targetType', 'targetId', 'details', 'createdAt'
+        ]) &&
+        data.ownerId is string && data.ownerId.size() >= 1 && data.ownerId.size() <= 128 && data.ownerId.matches('^[a-zA-Z0-9_\\-]+$') &&
+        data.ownerId == request.auth.uid &&
+        data.actor is string && data.actor.size() <= 32 &&
+        data.actor in ['OWNER_ADMIN', 'AI_AGENT_GUARDED', 'SYSTEM_WEBHOOK'] &&
+        data.action is string && data.action.size() >= 1 && data.action.size() <= 120 &&
+        data.targetType is string && data.targetType.size() <= 32 &&
+        data.targetType in ['JOB', 'LEDGER', 'PAYOUT_METHOD', 'WITHDRAWAL', 'SECURITY_POLICY'] &&
+        data.targetId is string && data.targetId.size() >= 1 && data.targetId.size() <= 128 &&
+        data.details is string && data.details.size() >= 1 && data.details.size() <= 500 &&
+        data.createdAt is timestamp;
+    }
+
+    // 3. Collection Rules
+
+    // Connection test path (read-only for owner/authenticated check)
+    match /test/{docId} {
+      allow get: if isSignedIn() && isValidId(docId);
+      allow list, create, update, delete: if false;
+    }
+
+    // Admins Collection
+    match /admins/{adminId} {
+      allow get: if isVerifiedUser() && isValidId(adminId) && request.auth.uid == adminId;
+      allow list: if false;
+      allow create: if isVerifiedUser() && isValidId(adminId) &&
+        request.auth.uid == adminId &&
+        request.auth.token.email == 'ayanislam10000@gmail.com' &&
+        isValidAdminRecord(incoming()) &&
+        incoming().createdAt == request.time;
+      allow update, delete: if false;
+    }
+
+    // Jobs Collection
+    match /jobs/{jobId} {
+      allow get: if isVerifiedUser() && isValidId(jobId) && existing().ownerId == request.auth.uid && isAdmin();
+      allow list: if isVerifiedUser() && existing().ownerId == request.auth.uid;
+      allow create: if isVerifiedUser() && isValidId(jobId) &&
+        isValidJobRecord(incoming()) &&
+        incoming().createdAt == request.time &&
+        incoming().updatedAt == request.time &&
+        isAdmin();
+      allow update: if isVerifiedUser() && isValidId(jobId) &&
+        isValidJobRecord(incoming()) &&
+        existing().ownerId == request.auth.uid &&
+        incoming().ownerId == existing().ownerId &&
+        incoming().createdAt == existing().createdAt &&
+        incoming().updatedAt == request.time &&
+        (existing().stage != 'REFUNDED' || isAdmin()) &&
+        (
+          (incoming().diff(existing()).affectedKeys().hasOnly(['stage', 'aiSummary', 'updatedAt'])) ||
+          (incoming().diff(existing()).affectedKeys().hasOnly(['stage', 'verifiedGrossBdt', 'platformFeeBdt', 'netEarnedBdt', 'paymentProofRef', 'updatedAt'])) ||
+          (isAdmin() && incoming().diff(existing()).affectedKeys().hasOnly([
+            'title', 'clientName', 'platform', 'category', 'stage',
+            'estimatedBdt', 'verifiedGrossBdt', 'platformFeeBdt', 'netEarnedBdt',
+            'paymentProofRef', 'aiSummary', 'updatedAt'
+          ]))
+        );
+      allow delete: if false;
+    }
+
+    // Immutable Financial Ledger Collection
+    match /ledger_entries/{entryId} {
+      allow get: if isVerifiedUser() && isValidId(entryId) && existing().ownerId == request.auth.uid && isAdmin();
+      allow list: if isVerifiedUser() && existing().ownerId == request.auth.uid;
+      allow create: if isVerifiedUser() && isValidId(entryId) &&
+        isValidLedgerEntry(incoming()) &&
+        incoming().createdAt == request.time &&
+        incoming().updatedAt == request.time &&
+        isAdmin();
+      allow update: if isVerifiedUser() && isValidId(entryId) &&
+        isValidLedgerEntry(incoming()) &&
+        existing().ownerId == request.auth.uid &&
+        incoming().ownerId == existing().ownerId &&
+        incoming().createdAt == existing().createdAt &&
+        incoming().txnReference == existing().txnReference &&
+        incoming().entryType == existing().entryType &&
+        incoming().grossAmountBdt == existing().grossAmountBdt &&
+        incoming().feeAmountBdt == existing().feeAmountBdt &&
+        incoming().netAmountBdt == existing().netAmountBdt &&
+        incoming().updatedAt == request.time &&
+        isAdmin() &&
+        incoming().diff(existing()).affectedKeys().hasOnly(['reconciliationStatus', 'updatedAt']);
+      allow delete: if false;
+    }
+
+    // Payout Methods Collection
+    match /payout_methods/{methodId} {
+      allow get: if isVerifiedUser() && isValidId(methodId) && existing().ownerId == request.auth.uid && isAdmin();
+      allow list: if isVerifiedUser() && existing().ownerId == request.auth.uid;
+      allow create: if isVerifiedUser() && isValidId(methodId) &&
+        isValidPayoutMethod(incoming()) &&
+        incoming().createdAt == request.time &&
+        incoming().updatedAt == request.time &&
+        isAdmin();
+      allow update: if isVerifiedUser() && isValidId(methodId) &&
+        isValidPayoutMethod(incoming()) &&
+        existing().ownerId == request.auth.uid &&
+        incoming().ownerId == existing().ownerId &&
+        incoming().createdAt == existing().createdAt &&
+        incoming().updatedAt == request.time &&
+        isAdmin() &&
+        (
+          incoming().diff(existing()).affectedKeys().hasOnly(['isDefault', 'minWithdrawalBdt', 'autoPayoutEnabled', 'verificationStatus', 'updatedAt']) ||
+          incoming().diff(existing()).affectedKeys().hasOnly([
+            'providerName', 'accountHolderName', 'maskedAccountNumber',
+            'accountType', 'bankBranch', 'routingNumber', 'isDefault',
+            'verificationStatus', 'minWithdrawalBdt', 'autoPayoutEnabled', 'updatedAt'
+          ])
+        );
+      allow delete: if isVerifiedUser() && isValidId(methodId) && existing().ownerId == request.auth.uid && isAdmin();
+    }
+
+    // Withdrawals Collection
+    match /withdrawals/{withdrawalId} {
+      allow get: if isVerifiedUser() && isValidId(withdrawalId) && existing().ownerId == request.auth.uid && isAdmin();
+      allow list: if isVerifiedUser() && existing().ownerId == request.auth.uid;
+      allow create: if isVerifiedUser() && isValidId(withdrawalId) &&
+        isValidWithdrawalRequest(incoming()) &&
+        incoming().createdAt == request.time &&
+        incoming().updatedAt == request.time &&
+        isAdmin() &&
+        exists(/databases/$(database)/documents/payout_methods/$(incoming().payoutMethodId)) &&
+        get(/databases/$(database)/documents/payout_methods/$(incoming().payoutMethodId)).data.ownerId == request.auth.uid;
+      allow update: if isVerifiedUser() && isValidId(withdrawalId) &&
+        isValidWithdrawalRequest(incoming()) &&
+        existing().ownerId == request.auth.uid &&
+        incoming().ownerId == existing().ownerId &&
+        incoming().createdAt == existing().createdAt &&
+        incoming().payoutMethodId == existing().payoutMethodId &&
+        incoming().requestedAmountBdt == existing().requestedAmountBdt &&
+        incoming().idempotencyKey == existing().idempotencyKey &&
+        incoming().updatedAt == request.time &&
+        (!(existing().status in ['COMPLETED', 'CANCELLED']) || isAdmin()) &&
+        isAdmin() &&
+        incoming().diff(existing()).affectedKeys().hasOnly([
+          'status', 'transferReference', 'failureReason', 'retryCount', 'updatedAt'
+        ]);
+      allow delete: if false;
+    }
+
+    // Immutable Security & Financial Audit Logs
+    match /audit_logs/{logId} {
+      allow get: if isVerifiedUser() && isValidId(logId) && existing().ownerId == request.auth.uid && isAdmin();
+      allow list: if isVerifiedUser() && existing().ownerId == request.auth.uid;
+      allow create: if isVerifiedUser() && isValidId(logId) &&
+        isValidAuditLog(incoming()) &&
+        incoming().createdAt == request.time &&
+        isAdmin();
+      allow update, delete: if false;
+    }
+  }
+}
