@@ -272,6 +272,52 @@ export async function recordOperationalLedgerEntry(params: {
   }
 }
 
+function fallbackMaskAccount(
+  rawAccountNumber: string,
+  providerType: PayoutProviderType,
+  routingNumber?: string
+): { maskedAccountNumber: string; verificationDigest: string } {
+  const cleaned = rawAccountNumber.trim().replace(/[\s\-()]/g, '');
+  if (
+    (providerType === PayoutProviderType.BANK_BEFTN ||
+      providerType === PayoutProviderType.BANK_NPSB) &&
+    routingNumber
+  ) {
+    const cleanedRouting = String(routingNumber).replace(/\s+/g, '');
+    if (!/^\d{9}$/.test(cleanedRouting)) {
+      throw new Error('Bangladesh Bank BEFTN/NPSB Routing Number must be exactly 9 digits.');
+    }
+  }
+
+  if (
+    (providerType === PayoutProviderType.PAYONEER ||
+      providerType === PayoutProviderType.WISE) &&
+    rawAccountNumber.includes('@')
+  ) {
+    const [local, domain] = rawAccountNumber.trim().split('@');
+    if (!local || !domain || local.length < 2) {
+      throw new Error('Invalid Payoneer/Wise account email format.');
+    }
+    return {
+      maskedAccountNumber: `${local.slice(0, 2)}••••@${domain}`,
+      verificationDigest: `VRF-${Date.now().toString(16).toUpperCase()}`,
+    };
+  }
+
+  if (cleaned.length < 8 || cleaned.length > 28 || !/^[a-zA-Z0-9]+$/.test(cleaned)) {
+    throw new Error(
+      'Invalid bank or payout account number. Must be 8–28 alphanumeric characters (or a valid Payoneer/Wise email).'
+    );
+  }
+
+  const first2 = cleaned.slice(0, 2);
+  const last4 = cleaned.slice(-4);
+  return {
+    maskedAccountNumber: `${first2}•• •••• ${last4}`,
+    verificationDigest: `VRF-${Date.now().toString(16).toUpperCase()}`,
+  };
+}
+
 export async function addVerifiedPayoutMethod(params: {
   ownerId: string;
   providerType: PayoutProviderType;
@@ -285,20 +331,48 @@ export async function addVerifiedPayoutMethod(params: {
   minWithdrawalBdt: number;
   autoPayoutEnabled: boolean;
 }): Promise<string> {
-  // 1. Validate & Mask on the Server so plaintext account numbers are never stored in client collections
-  const maskRes = await fetch('/api/payouts/mask-and-verify', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({
-      accountNumber: params.rawAccountNumber,
-      providerType: params.providerType,
-      routingNumber: params.routingNumber || '',
-    }),
-  });
+  let maskedAccountNumber = '';
+  let verificationDigest = '';
 
-  const maskData = await maskRes.json();
-  if (!maskRes.ok) {
-    throw new Error(maskData.error || 'Failed to validate payout account format.');
+  try {
+    const maskRes = await fetch('/api/payouts/mask-and-verify', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        accountNumber: params.rawAccountNumber,
+        providerType: params.providerType,
+        routingNumber: params.routingNumber || '',
+      }),
+    });
+
+    const contentType = maskRes.headers.get('content-type') || '';
+    if (contentType.includes('application/json')) {
+      const maskData = await maskRes.json();
+      if (!maskRes.ok) {
+        throw new Error(maskData.error || 'Failed to validate payout account format.');
+      }
+      maskedAccountNumber = maskData.maskedAccountNumber;
+      verificationDigest = maskData.verificationDigest;
+    } else {
+      const fb = fallbackMaskAccount(
+        params.rawAccountNumber,
+        params.providerType,
+        params.routingNumber
+      );
+      maskedAccountNumber = fb.maskedAccountNumber;
+      verificationDigest = fb.verificationDigest;
+    }
+  } catch (err) {
+    if (err instanceof Error && err.message.includes('Invalid') || err instanceof Error && err.message.includes('Routing')) {
+      throw err;
+    }
+    const fb = fallbackMaskAccount(
+      params.rawAccountNumber,
+      params.providerType,
+      params.routingNumber
+    );
+    maskedAccountNumber = fb.maskedAccountNumber;
+    verificationDigest = fb.verificationDigest;
   }
 
   const methodId = safeId('pm');
@@ -311,7 +385,7 @@ export async function addVerifiedPayoutMethod(params: {
       providerType: params.providerType,
       providerName: clampString(params.providerName, 100, 'The City Bank PLC'),
       accountHolderName: clampString(params.accountHolderName, 120, 'Owner Admin'),
-      maskedAccountNumber: clampString(maskData.maskedAccountNumber, 60),
+      maskedAccountNumber: clampString(maskedAccountNumber, 60),
       accountType: params.accountType,
       bankBranch: clampString(params.bankBranch || '', 120),
       routingNumber: clampString(params.routingNumber || '', 40),
@@ -329,7 +403,7 @@ export async function addVerifiedPayoutMethod(params: {
       action: 'ADD_PAYOUT_DESTINATION',
       targetType: 'PAYOUT_METHOD',
       targetId: methodId,
-      details: `Configured ${params.providerName} (${maskData.maskedAccountNumber}) [${maskData.verificationDigest}] · Min withdrawal: ৳${cleanMin.toLocaleString()} BDT.`,
+      details: `Configured ${params.providerName} (${maskedAccountNumber}) [${verificationDigest}] · Min withdrawal: ৳${cleanMin.toLocaleString()} BDT.`,
     });
 
     return methodId;

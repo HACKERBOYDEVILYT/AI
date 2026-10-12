@@ -278,7 +278,7 @@ ${JSON.stringify(financialSnapshot || {}, null, 2)}`,
   } else {
     const distPath = path.join(process.cwd(), 'dist');
     app.use(express.static(distPath));
-    app.get('*all', (_req, res) => {
+    app.use((_req, res) => {
       res.sendFile(path.join(distPath, 'index.html'));
     });
   }

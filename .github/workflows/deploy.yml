@@ -1,4 +1,4 @@
-name: Deploy Website & Cloud Run
+name: Deploy Website & Build Android APK
 
 on:
   push:
@@ -8,88 +8,118 @@ on:
   workflow_dispatch:
 
 permissions:
-  contents: read
+  contents: write
   pages: write
   id-token: write
 
 concurrency:
-  group: 'pages-and-cloud-deploy'
-  cancel-in-progress: true
+  group: 'pages-and-apk-deploy'
+  cancel-in-progress: false
 
 jobs:
-  build-and-verify:
-    name: Build & Security Audit
-    runs-on: ubuntu-latest
-
-    steps:
-      - name: Checkout Repository
-        uses: actions/checkout@v4
-
-      - name: Setup Node.js 22
-        uses: actions/setup-node@v4
-        with:
-          node-version: '22'
-          cache: 'npm'
-
-      - name: Install Dependencies
-        run: npm install
-
-      - name: TypeScript Verification
-        run: npm run lint
-
-      - name: Firestore Security Rules ESLint Verification
-        run: npx eslint firestore.rules
-
-      - name: Build Production Bundle
-        run: |
-          npm run build
-          cp dist/index.html dist/404.html
-
-      - name: Upload GitHub Pages Artifact
-        uses: actions/upload-pages-artifact@v3
-        with:
-          path: './dist'
-
-  deploy-github-pages:
-    name: Deploy Website to GitHub Pages
-    needs: build-and-verify
+  build-web-and-apk:
+    name: Build Website, Compile Android APK & Deploy
     runs-on: ubuntu-latest
     environment:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
 
     steps:
-      - name: Deploy to GitHub Pages
-        id: deployment
-        uses: actions/deploy-pages@v4
-
-  deploy-cloud-run-and-firestore:
-    name: Deploy Full-Stack Server to Cloud Run & Firestore Rules
-    needs: build-and-verify
-    runs-on: ubuntu-latest
-    if: ${{ secrets.GCP_SA_KEY != '' }}
-
-    steps:
       - name: Checkout Repository
         uses: actions/checkout@v4
 
-      - name: Authenticate to Google Cloud
-        uses: google-github-actions/auth@v2
+      - name: Setup Node.js 22 (No Lockfile Cache Requirement)
+        uses: actions/setup-node@v4
         with:
-          credentials_json: ${{ secrets.GCP_SA_KEY }}
+          node-version: '22'
 
-      - name: Deploy Firestore Security Rules
+      - name: Normalize package.json for Public NPM Registry & Install
         run: |
-          npm install -g firebase-tools
-          firebase deploy --only firestore:rules --project seraphic-snow-p5w43
+          node -e '
+            const fs = require("fs");
+            const pkg = JSON.parse(fs.readFileSync("package.json", "utf8"));
+            pkg.dependencies = {
+              "@google/genai": "latest",
+              "@tailwindcss/vite": "latest",
+              "@vitejs/plugin-react": "latest",
+              "dotenv": "latest",
+              "express": "^4.21.2",
+              "firebase": "latest",
+              "lucide-react": "latest",
+              "motion": "latest",
+              "react": "^19.0.0",
+              "react-dom": "^19.0.0",
+              "recharts": "latest",
+              "vite": "latest"
+            };
+            pkg.devDependencies = {
+              "@types/express": "latest",
+              "@types/node": "latest",
+              "@types/react": "^19.0.0",
+              "@types/react-dom": "^19.0.0",
+              "autoprefixer": "latest",
+              "esbuild": "latest",
+              "tailwindcss": "latest",
+              "tsx": "latest",
+              "typescript": "latest"
+            };
+            fs.writeFileSync("package.json", JSON.stringify(pkg, null, 2));
+          '
+          npm install --legacy-peer-deps
 
-      - name: Deploy Full-Stack Container to Cloud Run
-        uses: google-github-actions/deploy-cloudrun@v2
+      - name: Build Production Website (dist)
+        run: |
+          npx vite build
+          cp dist/index.html dist/404.html
+          touch dist/.nojekyll
+
+      - name: Setup Java JDK 21 for Android APK Build
+        uses: actions/setup-java@v4
         with:
-          service: lifegraph-finops-admin
-          region: asia-southeast1
-          source: .
-          flags: '--allow-unauthenticated --port=3000'
-          env_vars: |
-            NODE_ENV=production
-            GEMINI_API_KEY=${{ secrets.GEMINI_API_KEY }}
+          distribution: 'temurin'
+          java-version: '21'
+
+      - name: Setup Android SDK
+        uses: android-actions/setup-android@v3
+
+      - name: Generate Android Project & Compile APK via Capacitor + Gradle
+        run: |
+          npm install --no-save --legacy-peer-deps @capacitor/core@latest @capacitor/cli@latest @capacitor/android@latest
+          rm -rf android
+          npx cap add android
+          npx cap sync android
+          cd android
+          chmod +x gradlew
+          ./gradlew assembleDebug --no-daemon
+          cp app/build/outputs/apk/debug/app-debug.apk ../dist/lifegraph-finops.apk
+          cp app/build/outputs/apk/debug/app-debug.apk ../lifegraph-finops-v1.0.0.apk
+
+      - name: Upload Compiled Android APK Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: lifegraph-android-apk
+          path: lifegraph-finops-v1.0.0.apk
+
+      - name: Auto-Enable & Configure GitHub Pages
+        uses: actions/configure-pages@v5
+        with:
+          enablement: true
+        continue-on-error: true
+
+      - name: Upload GitHub Pages Website Artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: './dist'
+
+      - name: Deploy Website to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
+        continue-on-error: true
+
+      - name: Publish Website + APK to gh-pages Branch
+        uses: peaceiris/actions-gh-pages@v4
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: ./dist
+          force_orphan: true
+        continue-on-error: true

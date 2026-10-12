@@ -11,6 +11,7 @@ import { JobPipelineSection } from './components/JobPipelineSection';
 import { LedgerSection } from './components/LedgerSection';
 import { OverviewSection } from './components/OverviewSection';
 import { PayoutSystemSection } from './components/PayoutSystemSection';
+import { PWAInstallButton } from './components/PWAInstallButton';
 import { SecurityAuditSection } from './components/SecurityAuditSection';
 import {
   auth,
@@ -531,6 +532,7 @@ export default function App() {
               </div>
 
               <div className="flex flex-wrap items-center gap-2">
+                <PWAInstallButton />
                 {/* Mobile section switcher */}
                 <div className="flex md:hidden flex-wrap items-center gap-1">
                   {(
