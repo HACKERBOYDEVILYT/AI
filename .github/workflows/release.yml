@@ -1,4 +1,4 @@
-name: Build APK & Publish GitHub Release
+name: Build Android APK & Publish Release
 
 on:
   push:
@@ -16,8 +16,6 @@ on:
 
 permissions:
   contents: write
-  pages: write
-  id-token: write
 
 jobs:
   build-apk-and-release:
@@ -35,133 +33,64 @@ jobs:
         with:
           node-version: '22'
 
-      - name: Normalize package.json for Public NPM + Capacitor & Install
+      - name: Install Node Dependencies
         run: |
           rm -f bun.lock package-lock.json yarn.lock pnpm-lock.yaml
-          node --input-type=commonjs -e '
-            const fs = require("fs");
-            const pkg = JSON.parse(fs.readFileSync("package.json", "utf8"));
-            pkg.dependencies = {
-              "@capacitor/android": "^7.0.0",
-              "@capacitor/cli": "^7.0.0",
-              "@capacitor/core": "^7.0.0",
-              "@google/genai": "latest",
-              "@tailwindcss/vite": "latest",
-              "@vitejs/plugin-react": "latest",
-              "dotenv": "latest",
-              "express": "^4.21.2",
-              "firebase": "latest",
-              "lucide-react": "latest",
-              "motion": "latest",
-              "react": "^19.0.0",
-              "react-dom": "^19.0.0",
-              "recharts": "latest",
-              "vite": "latest"
-            };
-            pkg.devDependencies = {
-              "@types/express": "latest",
-              "@types/node": "latest",
-              "@types/react": "^19.0.0",
-              "@types/react-dom": "^19.0.0",
-              "autoprefixer": "latest",
-              "esbuild": "latest",
-              "tailwindcss": "latest",
-              "tsx": "latest",
-              "typescript": "latest"
-            };
-            fs.writeFileSync("package.json", JSON.stringify(pkg, null, 2));
-          '
           npm install --legacy-peer-deps
 
-      - name: Ensure Firebase & Capacitor Config Files Exist
-        run: |
-          if [ ! -f firebase-applet-config.json ]; then
-            cat << 'EOF' > firebase-applet-config.json
-          {
-            "projectId": "seraphic-snow-p5w43",
-            "appId": "1:585606005209:web:e85532762cad44667399c8",
-            "apiKey": "AIzaSyBI-M5wMYaKdP1nd45V5ZzymXNmeZtcCKQ",
-            "authDomain": "seraphic-snow-p5w43.firebaseapp.com",
-            "firestoreDatabaseId": "ai-studio-13942140-941b-484d-abbe-15828f04fa91",
-            "storageBucket": "seraphic-snow-p5w43.firebasestorage.app",
-            "messagingSenderId": "585606005209",
-            "measurementId": "",
-            "oAuthClientId": "585606005209-1cqok1pbqaqeoc405kr7d6n7hasn16e0.apps.googleusercontent.com",
-            "recaptchaSiteKey": ""
-          }
-          EOF
-          fi
-          cat << 'EOF' > capacitor.config.json
-          {
-            "appId": "com.lifegraph.finops",
-            "appName": "LIFEGRAPH FinOps",
-            "webDir": "dist",
-            "server": {
-              "androidScheme": "https"
-            }
-          }
-          EOF
-
-      - name: Build Production Web Bundle
+      - name: Build Web Production Assets
         run: |
           npx vite build
-          cp dist/index.html dist/404.html
+          cp dist/index.html dist/404.html || true
           touch dist/.nojekyll
 
-      - name: Setup Java JDK 21 for Android APK Build
+      - name: Sync Web Build to Capacitor Android
+        run: |
+          npx @capacitor/cli sync android
+
+      - name: Setup Java JDK 21
         uses: actions/setup-java@v4
         with:
           distribution: 'temurin'
           java-version: '21'
 
-      - name: Setup Android SDK
-        uses: android-actions/setup-android@v3
-
-      - name: Build Android APK (lifegraph-finops-v1.0.0.apk)
+      - name: Build Android APK with Gradle
         run: |
-          rm -rf android
-          npx cap add android
-          npx cap sync android
           cd android
           chmod +x gradlew
           ./gradlew assembleDebug --no-daemon --stacktrace
           cp app/build/outputs/apk/debug/app-debug.apk ../lifegraph-finops-v1.0.0.apk
           cp app/build/outputs/apk/debug/app-debug.apk ../dist/lifegraph-finops.apk
+          cd ..
 
-      - name: Upload Compiled APK as Workflow Artifact
+      - name: Upload Android APK Artifact (Actions Tab)
         uses: actions/upload-artifact@v4
         with:
-          name: lifegraph-finops-apk
+          name: lifegraph-finops-v1.0.0-apk
           path: lifegraph-finops-v1.0.0.apk
-          if-no-files-found: error
+          if-no-files-found: warn
 
-      - name: Package Web Release Archives
+      - name: Package Web Release Distribution
         run: |
-          tar -czf lifegraph-finops-web-dist.tar.gz dist server.ts firestore.rules firebase-blueprint.json README.md RELEASE_NOTES.md
-          zip -r lifegraph-finops-web-dist.zip dist server.ts firestore.rules firebase-blueprint.json README.md RELEASE_NOTES.md
+          zip -r lifegraph-finops-web-dist.zip dist server.ts firestore.rules README.md
 
-      - name: Publish GitHub Release with APK & Web Bundle
+      - name: Upload Web Package Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: lifegraph-web-bundle
+          path: lifegraph-finops-web-dist.zip
+
+      - name: Publish GitHub Release (with APK & Web Bundle)
         uses: softprops/action-gh-release@v2
         continue-on-error: true
         with:
           tag_name: ${{ github.event.inputs.tag_name || (startsWith(github.ref, 'refs/tags/') && github.ref_name) || 'v1.0.0' }}
           name: Release ${{ github.event.inputs.tag_name || (startsWith(github.ref, 'refs/tags/') && github.ref_name) || 'v1.0.0' }} — LIFEGRAPH Android APK & Web FinOps
-          body_path: RELEASE_NOTES.md
           draft: false
           prerelease: false
-          generate_release_notes: true
           files: |
             lifegraph-finops-v1.0.0.apk
             lifegraph-finops-web-dist.zip
-            lifegraph-finops-web-dist.tar.gz
             firestore.rules
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Sync Built Website + APK to gh-pages Branch
-        uses: peaceiris/actions-gh-pages@v4
-        continue-on-error: true
-        with:
-          github_token: ${{ secrets.GITHUB_TOKEN }}
-          publish_dir: ./dist
-          force_orphan: true

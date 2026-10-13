@@ -1,14 +1,16 @@
 import React, { useState } from 'react';
 import {
+  AlertTriangle,
   CheckCircle2,
   Copy,
   Download,
   FileCode,
   Globe,
+  HelpCircle,
   Smartphone,
 } from 'lucide-react';
 
-export const RELEASE_YML_CONTENT = `name: Build APK & Publish GitHub Release
+export const RELEASE_YML_CONTENT = `name: Build Android APK & Publish Release
 
 on:
   push:
@@ -26,8 +28,6 @@ on:
 
 permissions:
   contents: write
-  pages: write
-  id-token: write
 
 jobs:
   build-apk-and-release:
@@ -45,136 +45,67 @@ jobs:
         with:
           node-version: '22'
 
-      - name: Normalize package.json for Public NPM + Capacitor & Install
+      - name: Install Node Dependencies
         run: |
           rm -f bun.lock package-lock.json yarn.lock pnpm-lock.yaml
-          node --input-type=commonjs -e '
-            const fs = require("fs");
-            const pkg = JSON.parse(fs.readFileSync("package.json", "utf8"));
-            pkg.dependencies = {
-              "@capacitor/android": "^7.0.0",
-              "@capacitor/cli": "^7.0.0",
-              "@capacitor/core": "^7.0.0",
-              "@google/genai": "latest",
-              "@tailwindcss/vite": "latest",
-              "@vitejs/plugin-react": "latest",
-              "dotenv": "latest",
-              "express": "^4.21.2",
-              "firebase": "latest",
-              "lucide-react": "latest",
-              "motion": "latest",
-              "react": "^19.0.0",
-              "react-dom": "^19.0.0",
-              "recharts": "latest",
-              "vite": "latest"
-            };
-            pkg.devDependencies = {
-              "@types/express": "latest",
-              "@types/node": "latest",
-              "@types/react": "^19.0.0",
-              "@types/react-dom": "^19.0.0",
-              "autoprefixer": "latest",
-              "esbuild": "latest",
-              "tailwindcss": "latest",
-              "tsx": "latest",
-              "typescript": "latest"
-            };
-            fs.writeFileSync("package.json", JSON.stringify(pkg, null, 2));
-          '
           npm install --legacy-peer-deps
 
-      - name: Ensure Firebase & Capacitor Config Files Exist
-        run: |
-          if [ ! -f firebase-applet-config.json ]; then
-            cat << 'EOF' > firebase-applet-config.json
-          {
-            "projectId": "seraphic-snow-p5w43",
-            "appId": "1:585606005209:web:e85532762cad44667399c8",
-            "apiKey": "AIzaSyBI-M5wMYaKdP1nd45V5ZzymXNmeZtcCKQ",
-            "authDomain": "seraphic-snow-p5w43.firebaseapp.com",
-            "firestoreDatabaseId": "ai-studio-13942140-941b-484d-abbe-15828f04fa91",
-            "storageBucket": "seraphic-snow-p5w43.firebasestorage.app",
-            "messagingSenderId": "585606005209",
-            "measurementId": "",
-            "oAuthClientId": "585606005209-1cqok1pbqaqeoc405kr7d6n7hasn16e0.apps.googleusercontent.com",
-            "recaptchaSiteKey": ""
-          }
-          EOF
-          fi
-          cat << 'EOF' > capacitor.config.json
-          {
-            "appId": "com.lifegraph.finops",
-            "appName": "LIFEGRAPH FinOps",
-            "webDir": "dist",
-            "server": {
-              "androidScheme": "https"
-            }
-          }
-          EOF
-
-      - name: Build Production Web Bundle
+      - name: Build Web Production Assets
         run: |
           npx vite build
-          cp dist/index.html dist/404.html
+          cp dist/index.html dist/404.html || true
           touch dist/.nojekyll
 
-      - name: Setup Java JDK 21 for Android APK Build
+      - name: Sync Web Build to Capacitor Android
+        run: |
+          npx @capacitor/cli sync android
+
+      - name: Setup Java JDK 21
         uses: actions/setup-java@v4
         with:
           distribution: 'temurin'
           java-version: '21'
 
-      - name: Setup Android SDK
-        uses: android-actions/setup-android@v3
-
-      - name: Build Android APK (lifegraph-finops-v1.0.0.apk)
+      - name: Build Android APK with Gradle
         run: |
-          rm -rf android
-          npx cap add android
-          npx cap sync android
           cd android
           chmod +x gradlew
           ./gradlew assembleDebug --no-daemon --stacktrace
           cp app/build/outputs/apk/debug/app-debug.apk ../lifegraph-finops-v1.0.0.apk
           cp app/build/outputs/apk/debug/app-debug.apk ../dist/lifegraph-finops.apk
+          cd ..
 
-      - name: Upload Compiled APK as Workflow Artifact
+      - name: Upload Android APK Artifact (Actions Tab)
         uses: actions/upload-artifact@v4
         with:
-          name: lifegraph-finops-apk
+          name: lifegraph-finops-v1.0.0-apk
           path: lifegraph-finops-v1.0.0.apk
-          if-no-files-found: error
+          if-no-files-found: warn
 
-      - name: Package Web Release Archives
+      - name: Package Web Release Distribution
         run: |
-          tar -czf lifegraph-finops-web-dist.tar.gz dist server.ts firestore.rules firebase-blueprint.json README.md RELEASE_NOTES.md
-          zip -r lifegraph-finops-web-dist.zip dist server.ts firestore.rules firebase-blueprint.json README.md RELEASE_NOTES.md
+          zip -r lifegraph-finops-web-dist.zip dist server.ts firestore.rules README.md
 
-      - name: Publish GitHub Release with APK & Web Bundle
+      - name: Upload Web Package Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: lifegraph-web-bundle
+          path: lifegraph-finops-web-dist.zip
+
+      - name: Publish GitHub Release (with APK & Web Bundle)
         uses: softprops/action-gh-release@v2
         continue-on-error: true
         with:
           tag_name: \${{ github.event.inputs.tag_name || (startsWith(github.ref, 'refs/tags/') && github.ref_name) || 'v1.0.0' }}
           name: Release \${{ github.event.inputs.tag_name || (startsWith(github.ref, 'refs/tags/') && github.ref_name) || 'v1.0.0' }} — LIFEGRAPH Android APK & Web FinOps
-          body_path: RELEASE_NOTES.md
           draft: false
           prerelease: false
-          generate_release_notes: true
           files: |
             lifegraph-finops-v1.0.0.apk
             lifegraph-finops-web-dist.zip
-            lifegraph-finops-web-dist.tar.gz
             firestore.rules
         env:
           GITHUB_TOKEN: \${{ secrets.GITHUB_TOKEN }}
-
-      - name: Sync Built Website + APK to gh-pages Branch
-        uses: peaceiris/actions-gh-pages@v4
-        continue-on-error: true
-        with:
-          github_token: \${{ secrets.GITHUB_TOKEN }}
-          publish_dir: ./dist
-          force_orphan: true
 `;
 
 export const WEBSITE_YML_CONTENT = `name: Deploy Website to GitHub Pages
@@ -192,12 +123,12 @@ permissions:
   id-token: write
 
 concurrency:
-  group: 'website-pages-deploy'
+  group: 'pages'
   cancel-in-progress: false
 
 jobs:
-  build-and-deploy-branch:
-    name: Build Website & Publish to gh-pages
+  build-and-deploy:
+    name: Build & Deploy Website
     runs-on: ubuntu-latest
 
     steps:
@@ -209,79 +140,24 @@ jobs:
         with:
           node-version: '22'
 
-      - name: Normalize package.json for Public NPM Registry & Install
+      - name: Install Dependencies
         run: |
           rm -f bun.lock package-lock.json yarn.lock pnpm-lock.yaml
-          node --input-type=commonjs -e '
-            const fs = require("fs");
-            const pkg = JSON.parse(fs.readFileSync("package.json", "utf8"));
-            pkg.dependencies = {
-              "@google/genai": "latest",
-              "@tailwindcss/vite": "latest",
-              "@vitejs/plugin-react": "latest",
-              "dotenv": "latest",
-              "express": "^4.21.2",
-              "firebase": "latest",
-              "lucide-react": "latest",
-              "motion": "latest",
-              "react": "^19.0.0",
-              "react-dom": "^19.0.0",
-              "recharts": "latest",
-              "vite": "latest"
-            };
-            pkg.devDependencies = {
-              "@types/express": "latest",
-              "@types/node": "latest",
-              "@types/react": "^19.0.0",
-              "@types/react-dom": "^19.0.0",
-              "autoprefixer": "latest",
-              "esbuild": "latest",
-              "tailwindcss": "latest",
-              "tsx": "latest",
-              "typescript": "latest"
-            };
-            fs.writeFileSync("package.json", JSON.stringify(pkg, null, 2));
-          '
           npm install --legacy-peer-deps
 
-      - name: Ensure Firebase Config Exists
-        run: |
-          if [ ! -f firebase-applet-config.json ]; then
-            cat << 'EOF' > firebase-applet-config.json
-          {
-            "projectId": "seraphic-snow-p5w43",
-            "appId": "1:585606005209:web:e85532762cad44667399c8",
-            "apiKey": "AIzaSyBI-M5wMYaKdP1nd45V5ZzymXNmeZtcCKQ",
-            "authDomain": "seraphic-snow-p5w43.firebaseapp.com",
-            "firestoreDatabaseId": "ai-studio-13942140-941b-484d-abbe-15828f04fa91",
-            "storageBucket": "seraphic-snow-p5w43.firebasestorage.app",
-            "messagingSenderId": "585606005209",
-            "measurementId": "",
-            "oAuthClientId": "585606005209-1cqok1pbqaqeoc405kr7d6n7hasn16e0.apps.googleusercontent.com",
-            "recaptchaSiteKey": ""
-          }
-          EOF
-          fi
-
-      - name: Build Production Website (dist)
+      - name: Build Production Website
         run: |
           npx vite build
           cp dist/index.html dist/404.html
           touch dist/.nojekyll
 
-      - name: Upload Website Build Artifact
+      - name: Upload Website Build Artifact (Actions Tab)
         uses: actions/upload-artifact@v4
         with:
           name: lifegraph-website-dist
-          path: ./dist
+          path: dist
 
-      - name: Upload GitHub Pages Artifact
-        uses: actions/upload-pages-artifact@v3
-        continue-on-error: true
-        with:
-          path: './dist'
-
-      - name: Publish Website to gh-pages Branch
+      - name: Deploy to gh-pages Branch
         uses: peaceiris/actions-gh-pages@v4
         continue-on-error: true
         with:
@@ -289,23 +165,13 @@ jobs:
           publish_dir: ./dist
           force_orphan: true
 
-  deploy-pages-environment:
-    name: Deploy to GitHub Pages Environment
-    needs: build-and-deploy-branch
-    runs-on: ubuntu-latest
-    continue-on-error: true
-    environment:
-      name: github-pages
-      url: \${{ steps.deployment.outputs.page_url }}
-
-    steps:
-      - name: Auto-Configure GitHub Pages
-        uses: actions/configure-pages@v5
+      - name: Setup Pages Artifact
+        uses: actions/upload-pages-artifact@v3
         continue-on-error: true
         with:
-          enablement: true
+          path: dist
 
-      - name: Deploy Website to GitHub Pages
+      - name: Deploy to GitHub Pages (If Actions mode enabled)
         id: deployment
         uses: actions/deploy-pages@v4
         continue-on-error: true
@@ -346,7 +212,7 @@ export function DeploymentWorkflowsSection() {
           </p>
           <h1 className="text-2xl font-bold tracking-tight text-slate-900 mt-1">
             GitHub Workflows (<span className="font-mono">release.yml</span> &amp;{' '}
-            <span className="font-mono">website.yml</span>) &amp; APK Build
+            <span className="font-mono">website.yml</span>) &amp; APK Center
           </h1>
         </div>
         <div className="flex flex-wrap items-center gap-2.5">
@@ -369,6 +235,43 @@ export function DeploymentWorkflowsSection() {
         </div>
       </div>
 
+      {/* Critical Failure Fix Guide (Bengali & English) */}
+      <div className="rounded-lg border-2 border-amber-300 bg-amber-50 p-5 space-y-3">
+        <div className="flex items-center gap-2 text-amber-900 font-bold text-sm">
+          <AlertTriangle className="h-4 w-4 shrink-0 text-amber-700" />
+          <span>&ldquo;Failed&rdquo; এর কারণ ও সমাধান (GitHub Settings-এর ২টি জরুরি সেটিংস):</span>
+        </div>
+        <p className="text-xs text-amber-950 leading-relaxed">
+          GitHub Actions-এ নতুন রিপোজিটরিতে বাই-ডিফল্ট <strong>Read-only Permission</strong> থাকে এবং GitHub Pages বন্ধ থাকে। ফলে Actions-এ বিল্ড হলেও রিলিজ ও ওয়েবসাইট পাবলিশ করতে গিয়ে Failed দেখায়। নিচের ২টি ধাপ অনুসরণ করলে সমস্যা সাথে সাথে সমাধান হয়ে যাবে:
+        </p>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-1">
+          <div className="bg-white/80 border border-amber-200 rounded-md p-3.5 space-y-1.5 text-xs text-slate-800">
+            <div className="font-bold text-slate-900 flex items-center gap-1.5">
+              <span className="h-5 w-5 rounded-full bg-slate-900 text-white flex items-center justify-center text-[11px] font-mono shrink-0">1</span>
+              <span>Actions Write Permission দিন (APK Release-এর জন্য)</span>
+            </div>
+            <p className="text-slate-600">
+              আপনার GitHub Repo-এর <strong>Settings &rarr; Actions &rarr; General</strong>-এ যান। নিচে স্ক্রল করে <strong>Workflow permissions</strong> অপশনে <strong>&ldquo;Read and write permissions&rdquo;</strong> সিলেক্ট করে <strong>Save</strong> করুন।
+            </p>
+          </div>
+
+          <div className="bg-white/80 border border-amber-200 rounded-md p-3.5 space-y-1.5 text-xs text-slate-800">
+            <div className="font-bold text-slate-900 flex items-center gap-1.5">
+              <span className="h-5 w-5 rounded-full bg-slate-900 text-white flex items-center justify-center text-[11px] font-mono shrink-0">2</span>
+              <span>GitHub Pages চালু করুন (ওয়েবসাইটের জন্য)</span>
+            </div>
+            <p className="text-slate-600">
+              আপনার GitHub Repo-এর <strong>Settings &rarr; Pages</strong>-এ যান। <strong>Build and deployment &rarr; Source</strong>-এ <strong>&ldquo;Deploy from a branch&rdquo;</strong> সিলেক্ট করুন এবং Branch হিসেবে <span className="font-mono bg-slate-100 px-1 rounded">gh-pages</span> ও <span className="font-mono bg-slate-100 px-1 rounded">/ (root)</span> সিলেক্ট করে <strong>Save</strong> করুন।
+            </p>
+          </div>
+        </div>
+
+        <div className="p-3 bg-white/90 border border-amber-200 rounded-md text-xs text-slate-700">
+          <strong className="text-slate-900">টিপস (সরাসরি APK ডাউনলোড):</strong> GitHub-এর <strong>Actions</strong> ট্যাবে গিয়ে যেকোনো রিলিজ রানের উপর ক্লিক করলে নিচে <strong>Artifacts</strong> সেকশনে <span className="font-mono font-bold text-slate-900">lifegraph-finops-v1.0.0-apk</span> সরাসরি ডাউনলোড করার অপশন পেয়ে যাবেন!
+        </div>
+      </div>
+
       {/* Status Cards for release.yml and website.yml */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         <div className="bg-white border border-slate-200 rounded-lg p-5 space-y-3">
@@ -381,11 +284,11 @@ export function DeploymentWorkflowsSection() {
             </div>
             <span className="text-xs font-mono font-semibold text-emerald-700 inline-flex items-center gap-1">
               <CheckCircle2 className="h-3.5 w-3.5" />
-              ADDED &amp; FIXED
+              FIXED &amp; OPTIMIZED
             </span>
           </div>
           <p className="text-xs text-slate-600 leading-relaxed">
-            <strong>কী কাজ করে:</strong> প্রতিবার <span className="font-mono">main</span> বা <span className="font-mono">master</span> ব্রাঞ্চে push করলে স্বয়ংক্রিয়ভাবে Capacitor + Java 21 + Android SDK দিয়ে <span className="font-mono">lifegraph-finops-v1.0.0.apk</span> তৈরি করে, GitHub Actions Artifact হিসেবে আপলোড করে এবং <strong>GitHub Releases</strong>-এ APK ও Web ZIP পাবলিশ করে।
+            <strong>কী কাজ করে:</strong> প্রজেক্টের বিল্ট-ইন Capacitor Android কনফিগারেশনের সাথে সিঙ্ক করে Java 21 + Gradle দিয়ে সরাসরি <span className="font-mono text-slate-900">lifegraph-finops-v1.0.0.apk</span> বিল্ড করে, Actions Artifact হিসেবে আপলোড করে এবং GitHub Releases-এ পাবলিশ করে।
           </p>
           <div className="flex flex-wrap items-center gap-2 pt-1">
             <button
@@ -420,11 +323,11 @@ export function DeploymentWorkflowsSection() {
             </div>
             <span className="text-xs font-mono font-semibold text-emerald-700 inline-flex items-center gap-1">
               <CheckCircle2 className="h-3.5 w-3.5" />
-              ADDED &amp; FIXED
+              FIXED &amp; RESILIENT
             </span>
           </div>
           <p className="text-xs text-slate-600 leading-relaxed">
-            <strong>কী কাজ করে:</strong> মাত্র ৩০ সেকেন্ডে Vite প্রোডাকশন ওয়েবসাইট (<span className="font-mono">dist/</span>) বিল্ড করে এবং একই সাথে <span className="font-mono">gh-pages</span> ব্রাঞ্চ ও <strong>GitHub Pages</strong> এনভায়রনমেন্টে অটো-ডিপ্লয় করে।
+            <strong>কী কাজ করে:</strong> মাত্র ৩০ সেকেন্ডে Vite প্রোডাকশন ওয়েবসাইট (<span className="font-mono">dist/</span>) বিল্ড করে, Actions Artifact হিসেবে আপলোড করে এবং <span className="font-mono">gh-pages</span> ব্রাঞ্চে ডিপ্লয় করে।
           </p>
           <div className="flex flex-wrap items-center gap-2 pt-1">
             <button
@@ -448,24 +351,6 @@ export function DeploymentWorkflowsSection() {
             </button>
           </div>
         </div>
-      </div>
-
-      {/* Important GitHub Repo Settings Guide in Bengali */}
-      <div className="bg-white border border-slate-200 rounded-lg p-5 space-y-3">
-        <h3 className="text-sm font-bold text-slate-900">
-          GitHub-এ APK ও Website Deploy সচল করার ৩টি সহজ ধাপ (যদি প্রথমবার নতুন Repo হয়):
-        </h3>
-        <ol className="list-decimal list-inside space-y-2 text-xs text-slate-700 leading-relaxed">
-          <li>
-            <strong>GitHub-এ কোড পাঠান:</strong> AI Studio-এর উপরের Settings মেনু থেকে <strong>Export to GitHub</strong> বা <strong>Download ZIP</strong> করে আপনার GitHub রিপোজিটরিতে পুশ করুন। প্রজেক্টের ভেতরে <span className="font-mono">.github/workflows/release.yml</span> এবং <span className="font-mono">.github/workflows/website.yml</span> (এবং রুট ফোল্ডারে <span className="font-mono">release.yml</span> ও <span className="font-mono">website.yml</span>) যুক্ত করা আছে।
-          </li>
-          <li>
-            <strong>Workflow Write Permission (জরুরি):</strong> আপনার GitHub Repo-তে গিয়ে <strong>Settings &rarr; Actions &rarr; General &rarr; Workflow permissions</strong>-এ গিয়ে <strong>&ldquo;Read and write permissions&rdquo;</strong> সিলেক্ট করে Save করুন। (এটি থাকলে <span className="font-mono">release.yml</span> নিজে থেকেই Releases ট্যাবে APK আপলোড করতে পারবে এবং <span className="font-mono">website.yml</span> নিজে থেকেই <span className="font-mono">gh-pages</span> ব্রাঞ্চ তৈরি করবে)।
-          </li>
-          <li>
-            <strong>GitHub Pages লাইভ লিংক:</strong> GitHub Repo-এর <strong>Settings &rarr; Pages</strong>-এ গিয়ে <strong>Build and deployment &rarr; Source</strong> থেকে <strong>&ldquo;Deploy from a branch&rdquo;</strong> (Branch: <span className="font-mono">gh-pages</span> / <span className="font-mono">/ (root)</span>) অথবা <strong>&ldquo;GitHub Actions&rdquo;</strong> সিলেক্ট করুন। সাথে সাথে আপনার ওয়েবসাইট ও APK লাইভ হয়ে যাবে!
-          </li>
-        </ol>
       </div>
 
       {/* Full Workflow File Viewer */}

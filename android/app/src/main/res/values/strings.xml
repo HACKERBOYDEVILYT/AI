@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">LIFEGRAPH FinOps</string>
+    <string name="title_activity_main">LIFEGRAPH FinOps</string>
+    <string name="package_name">com.lifegraph.finops</string>
+    <string name="custom_url_scheme">com.lifegraph.finops</string>
+</resources>

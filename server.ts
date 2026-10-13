@@ -269,6 +269,31 @@ ${JSON.stringify(financialSnapshot || {}, null, 2)}`,
     }
   });
 
+  // Dedicated Android APK Download Route
+  app.get('/lifegraph-finops.apk', (_req, res) => {
+    const fs = require('fs');
+    const possiblePaths = [
+      path.join(process.cwd(), 'dist', 'lifegraph-finops.apk'),
+      path.join(process.cwd(), 'public', 'lifegraph-finops.apk'),
+      path.join(process.cwd(), 'lifegraph-finops-v1.0.0.apk'),
+      path.join(process.cwd(), 'android', 'app', 'build', 'outputs', 'apk', 'debug', 'app-debug.apk'),
+    ];
+
+    for (const p of possiblePaths) {
+      if (fs.existsSync(p)) {
+        res.setHeader('Content-Type', 'application/vnd.android.package-archive');
+        res.setHeader('Content-Disposition', 'attachment; filename="lifegraph-finops-v1.0.0.apk"');
+        return res.sendFile(p);
+      }
+    }
+
+    res.status(404).json({
+      error: 'APK_BUILD_IN_PROGRESS_OR_GITHUB_RELEASE_REQUIRED',
+      message:
+        'The Android APK is compiled automatically by GitHub Actions (.github/workflows/release.yml). Once pushed to GitHub, download the compiled APK from your repository Releases page or GitHub Actions artifacts tab.',
+    });
+  });
+
   if (process.env.NODE_ENV !== 'production') {
     const vite = await createViteServer({
       server: { middlewareMode: true },
