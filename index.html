@@ -20,17 +20,35 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <script>
+      // Ensure trailing slash for GitHub Pages repo subpaths so relative assets load properly
+      if (window.location.pathname && !window.location.pathname.endsWith('/') && !window.location.pathname.includes('.')) {
+        window.location.replace(window.location.pathname + '/' + window.location.search + window.location.hash);
+      }
+    </script>
   </head>
-  <body>
-    <div id="root"></div>
+  <body class="bg-slate-50 text-slate-900 antialiased">
+    <div id="root">
+      <div style="min-height: 100vh; display: flex; align-items: center; justify-content: center; background-color: #0f172a; color: #f8fafc; font-family: system-ui, -apple-system, sans-serif;">
+        <div style="text-align: center; padding: 24px;">
+          <div style="width: 38px; height: 38px; border: 3px solid #334155; border-top-color: #38bdf8; border-radius: 50%; margin: 0 auto 16px; animation: spin 0.9s linear infinite;"></div>
+          <h2 style="font-size: 18px; font-weight: 700; margin: 0 0 6px; letter-spacing: -0.02em;">LIFEGRAPH FinOps</h2>
+          <p style="font-size: 12px; color: #94a3b8; margin: 0;">Loading secure financial console...</p>
+        </div>
+      </div>
+      <style>
+        @keyframes spin { to { transform: rotate(360deg); } }
+      </style>
+    </div>
     <script type="module" src="/src/main.tsx"></script>
     <script>
-      if ('serviceWorker' in navigator) {
+      if ('serviceWorker' in navigator && window.location.protocol === 'https:') {
         window.addEventListener('load', () => {
-          navigator.serviceWorker.register('./sw.js').catch(() => {});
+          navigator.serviceWorker.register('./sw.js').catch(function(err) {
+            console.warn('SW registration bypassed:', err);
+          });
         });
       }
     </script>
   </body>
 </html>
-

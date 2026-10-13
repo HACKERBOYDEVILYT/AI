@@ -287,16 +287,23 @@ function reviveTimestamp(val: unknown): Timestamp {
   return Timestamp.now();
 }
 
+let inMemoryFallbackState: LocalStoreState | null = null;
+
 function loadLocalStore(ownerId: string): LocalStoreState {
+  if (inMemoryFallbackState) {
+    return inMemoryFallbackState;
+  }
   try {
-    const raw = localStorage.getItem(LOCAL_STORAGE_KEY);
+    const raw = typeof window !== 'undefined' && window.localStorage
+      ? localStorage.getItem(LOCAL_STORAGE_KEY)
+      : null;
     if (!raw) {
       const seeded = createInitialBaselineState(ownerId);
       saveLocalStore(seeded);
       return seeded;
     }
     const parsed = JSON.parse(raw) as LocalStoreState;
-    return {
+    const restored: LocalStoreState = {
       jobs: (parsed.jobs || []).map((j) => ({
         ...j,
         createdAt: reviveTimestamp(j.createdAt),
@@ -322,16 +329,23 @@ function loadLocalStore(ownerId: string): LocalStoreState {
         createdAt: reviveTimestamp(a.createdAt),
       })),
     };
+    inMemoryFallbackState = restored;
+    return restored;
   } catch {
-    return createInitialBaselineState(ownerId);
+    const fallback = createInitialBaselineState(ownerId);
+    inMemoryFallbackState = fallback;
+    return fallback;
   }
 }
 
 function saveLocalStore(state: LocalStoreState): void {
+  inMemoryFallbackState = state;
   try {
-    localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(state));
+    if (typeof window !== 'undefined' && window.localStorage) {
+      localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(state));
+    }
   } catch {
-    // Ignore storage quota errors
+    // Ignore storage quota or incognito restriction errors
   }
   for (const listener of localListeners) {
     listener(state);

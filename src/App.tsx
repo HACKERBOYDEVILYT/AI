@@ -98,22 +98,46 @@ export default function App() {
     isFirebaseOwner && currentUser?.displayName ? currentUser.displayName : 'Ayan Islam';
 
   useEffect(() => {
-    const unsubAuth = onAuthStateChanged(auth, async (user) => {
-      setCurrentUser(user);
-      setAuthReady(true);
-      if (
-        user &&
-        user.email?.toLowerCase() === AUTHORIZED_OWNER_EMAIL.toLowerCase() &&
-        user.emailVerified
-      ) {
-        try {
-          await ensureOwnerAdminRecord(user.uid);
-        } catch (err) {
-          console.error('Owner bootstrap error:', err);
+    // Safety fallback: if onAuthStateChanged hangs or takes long on static domains, enable standalone mode
+    const safetyTimer = setTimeout(() => {
+      setAuthReady((ready) => {
+        if (!ready) {
+          console.info('Firebase Auth handshake timeout on static host — auto-enabling Owner Standalone Mode');
+          return true;
         }
+        return ready;
+      });
+    }, 1000);
+
+    const unsubAuth = onAuthStateChanged(
+      auth,
+      async (user) => {
+        clearTimeout(safetyTimer);
+        setCurrentUser(user);
+        setAuthReady(true);
+        if (
+          user &&
+          user.email?.toLowerCase() === AUTHORIZED_OWNER_EMAIL.toLowerCase() &&
+          user.emailVerified
+        ) {
+          try {
+            await ensureOwnerAdminRecord(user.uid);
+          } catch (err) {
+            console.error('Owner bootstrap error:', err);
+          }
+        }
+      },
+      (err) => {
+        console.warn('Auth state error (continuing in Standalone Mode):', err);
+        clearTimeout(safetyTimer);
+        setAuthReady(true);
       }
-    });
-    return () => unsubAuth();
+    );
+
+    return () => {
+      clearTimeout(safetyTimer);
+      unsubAuth();
+    };
   }, []);
 
   useEffect(() => {
