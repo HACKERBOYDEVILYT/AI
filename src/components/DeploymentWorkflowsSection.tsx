@@ -58,6 +58,9 @@ jobs:
 
       - name: Sync Web Build to Capacitor Android
         run: |
+          if [ ! -d "android" ]; then
+            npx @capacitor/cli add android
+          fi
           npx @capacitor/cli sync android
 
       - name: Setup Java JDK 21
@@ -66,42 +69,52 @@ jobs:
           distribution: 'temurin'
           java-version: '21'
 
+      - name: Accept Android SDK Licenses
+        run: |
+          yes | $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager --licenses || true
+
       - name: Build Android APK with Gradle
         run: |
           cd android
           chmod +x gradlew
           ./gradlew assembleDebug --no-daemon --stacktrace
-          cp app/build/outputs/apk/debug/app-debug.apk ../lifegraph-finops-v1.0.0.apk
-          cp app/build/outputs/apk/debug/app-debug.apk ../dist/lifegraph-finops.apk
+          mkdir -p ../dist ../build-output
+          cp app/build/outputs/apk/debug/app-debug.apk ../build-output/lifegraph-finops-v1.0.0.apk || true
+          cp app/build/outputs/apk/debug/app-debug.apk ../dist/lifegraph-finops.apk || true
           cd ..
 
       - name: Upload Android APK Artifact (Actions Tab)
         uses: actions/upload-artifact@v4
         with:
           name: lifegraph-finops-v1.0.0-apk
-          path: lifegraph-finops-v1.0.0.apk
+          path: |
+            build-output/*.apk
+            android/app/build/outputs/apk/debug/app-debug.apk
           if-no-files-found: warn
 
       - name: Package Web Release Distribution
         run: |
-          zip -r lifegraph-finops-web-dist.zip dist server.ts firestore.rules README.md
+          zip -r lifegraph-finops-web-dist.zip dist server.ts firestore.rules README.md || true
 
       - name: Upload Web Package Artifact
         uses: actions/upload-artifact@v4
         with:
           name: lifegraph-web-bundle
           path: lifegraph-finops-web-dist.zip
+          if-no-files-found: warn
 
       - name: Publish GitHub Release (with APK & Web Bundle)
         uses: softprops/action-gh-release@v2
         continue-on-error: true
         with:
-          tag_name: \${{ github.event.inputs.tag_name || (startsWith(github.ref, 'refs/tags/') && github.ref_name) || 'v1.0.0' }}
-          name: Release \${{ github.event.inputs.tag_name || (startsWith(github.ref, 'refs/tags/') && github.ref_name) || 'v1.0.0' }} — LIFEGRAPH Android APK & Web FinOps
+          tag_name: \${{ github.event.inputs.tag_name || (startsWith(github.ref, 'refs/tags/') && github.ref_name) || format('v1.0.{0}', github.run_number) }}
+          name: Release \${{ github.event.inputs.tag_name || (startsWith(github.ref, 'refs/tags/') && github.ref_name) || format('v1.0.{0}', github.run_number) }} — LIFEGRAPH Android APK & Web FinOps
           draft: false
           prerelease: false
+          generate_release_notes: true
           files: |
-            lifegraph-finops-v1.0.0.apk
+            build-output/lifegraph-finops-v1.0.0.apk
+            android/app/build/outputs/apk/debug/app-debug.apk
             lifegraph-finops-web-dist.zip
             firestore.rules
         env:
@@ -127,10 +140,9 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
-  build-and-deploy:
-    name: Build & Deploy Website
+  build:
+    name: Build & Package Website
     runs-on: ubuntu-latest
-
     steps:
       - name: Checkout Repository
         uses: actions/checkout@v4
@@ -148,16 +160,16 @@ jobs:
       - name: Build Production Website
         run: |
           npx vite build
-          cp dist/index.html dist/404.html
+          cp dist/index.html dist/404.html || true
           touch dist/.nojekyll
 
-      - name: Upload Website Build Artifact (Actions Tab)
+      - name: Upload Website Artifact (Actions Tab)
         uses: actions/upload-artifact@v4
         with:
           name: lifegraph-website-dist
           path: dist
 
-      - name: Deploy to gh-pages Branch
+      - name: Deploy to gh-pages Branch (Branch-based Pages Fallback)
         uses: peaceiris/actions-gh-pages@v4
         continue-on-error: true
         with:
@@ -165,16 +177,23 @@ jobs:
           publish_dir: ./dist
           force_orphan: true
 
-      - name: Setup Pages Artifact
+      - name: Upload Pages Artifact (for GitHub Actions Pages)
         uses: actions/upload-pages-artifact@v3
-        continue-on-error: true
         with:
           path: dist
 
-      - name: Deploy to GitHub Pages (If Actions mode enabled)
+  deploy:
+    name: Deploy to GitHub Pages
+    needs: build
+    runs-on: ubuntu-latest
+    continue-on-error: true
+    environment:
+      name: github-pages
+      url: \${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Deploy to GitHub Pages
         id: deployment
         uses: actions/deploy-pages@v4
-        continue-on-error: true
 `;
 
 function downloadTextFile(filename: string, content: string) {

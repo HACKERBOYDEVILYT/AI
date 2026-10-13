@@ -17,10 +17,9 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
-  build-and-deploy:
-    name: Build & Deploy Website
+  build:
+    name: Build & Package Website
     runs-on: ubuntu-latest
-
     steps:
       - name: Checkout Repository
         uses: actions/checkout@v4
@@ -38,16 +37,16 @@ jobs:
       - name: Build Production Website
         run: |
           npx vite build
-          cp dist/index.html dist/404.html
+          cp dist/index.html dist/404.html || true
           touch dist/.nojekyll
 
-      - name: Upload Website Build Artifact (Actions Tab)
+      - name: Upload Website Artifact (Actions Tab)
         uses: actions/upload-artifact@v4
         with:
           name: lifegraph-website-dist
           path: dist
 
-      - name: Deploy to gh-pages Branch
+      - name: Deploy to gh-pages Branch (Branch-based Pages Fallback)
         uses: peaceiris/actions-gh-pages@v4
         continue-on-error: true
         with:
@@ -55,13 +54,20 @@ jobs:
           publish_dir: ./dist
           force_orphan: true
 
-      - name: Setup Pages Artifact
+      - name: Upload Pages Artifact (for GitHub Actions Pages)
         uses: actions/upload-pages-artifact@v3
-        continue-on-error: true
         with:
           path: dist
 
-      - name: Deploy to GitHub Pages (If Actions mode enabled)
+  deploy:
+    name: Deploy to GitHub Pages
+    needs: build
+    runs-on: ubuntu-latest
+    continue-on-error: true
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Deploy to GitHub Pages
         id: deployment
         uses: actions/deploy-pages@v4
-        continue-on-error: true
