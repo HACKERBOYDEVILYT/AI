@@ -27,6 +27,7 @@ import {
   createJobRecord,
   ensureOwnerAdminRecord,
   initiateWithdrawalRequest,
+  loadLocalStore,
   recordOperationalLedgerEntry,
   subscribeOwnerCollections,
   updateJobStageAndSummary,
@@ -53,17 +54,18 @@ const STANDALONE_OWNER_UID = 'owner_ayan_lifegraph';
 
 export default function App() {
   const [currentUser, setCurrentUser] = useState<User | null>(null);
-  const [authReady, setAuthReady] = useState(false);
+  const [authReady, setAuthReady] = useState(true);
   const [authError, setAuthError] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<ActiveTab>('overview');
   const [avatarLoadError, setAvatarLoadError] = useState(false);
 
-  // Firestore / Standalone Real-Time State
-  const [jobs, setJobs] = useState<JobRecord[]>([]);
-  const [ledgerEntries, setLedgerEntries] = useState<LedgerEntry[]>([]);
-  const [payoutMethods, setPayoutMethods] = useState<PayoutMethod[]>([]);
-  const [withdrawals, setWithdrawals] = useState<WithdrawalRequest[]>([]);
-  const [auditLogs, setAuditLogs] = useState<AuditLog[]>([]);
+  // Firestore / Standalone Real-Time State (Instantly seeded so no blank loading screen)
+  const initialLocalState = useMemo(() => loadLocalStore(STANDALONE_OWNER_UID), []);
+  const [jobs, setJobs] = useState<JobRecord[]>(initialLocalState.jobs);
+  const [ledgerEntries, setLedgerEntries] = useState<LedgerEntry[]>(initialLocalState.ledgerEntries);
+  const [payoutMethods, setPayoutMethods] = useState<PayoutMethod[]>(initialLocalState.payoutMethods);
+  const [withdrawals, setWithdrawals] = useState<WithdrawalRequest[]>(initialLocalState.withdrawals);
+  const [auditLogs, setAuditLogs] = useState<AuditLog[]>(initialLocalState.auditLogs);
   const [seeding, setSeeding] = useState(false);
 
   // Session Notifications
@@ -446,16 +448,7 @@ export default function App() {
 
       {/* Main Content Container */}
       <main className="flex-1 w-full max-w-[1360px] mx-auto px-4 sm:px-6 py-8">
-        {!authReady ? (
-          <div className="bg-white border border-slate-200 rounded-lg p-12 text-center space-y-2">
-            <p className="text-sm font-semibold text-slate-900">
-              Initializing LIFEGRAPH Owner Console...
-            </p>
-            <p className="text-xs text-slate-500">
-              Connecting to encrypted LIFEGRAPH financial ledger...
-            </p>
-          </div>
-        ) : isUnauthorizedExternalUser ? (
+        {isUnauthorizedExternalUser ? (
           /* Unauthorized User Block */
           <div className="max-w-xl mx-auto bg-white border border-red-200 rounded-lg p-8 space-y-4 my-8">
             <div className="flex items-center gap-2.5 text-red-700">

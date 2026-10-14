@@ -289,7 +289,7 @@ function reviveTimestamp(val: unknown): Timestamp {
 
 let inMemoryFallbackState: LocalStoreState | null = null;
 
-function loadLocalStore(ownerId: string): LocalStoreState {
+export function loadLocalStore(ownerId: string): LocalStoreState {
   if (inMemoryFallbackState) {
     return inMemoryFallbackState;
   }
@@ -1538,80 +1538,106 @@ export function subscribeOwnerCollections(
     };
   }
 
+  const getSortTime = (val: unknown): number => {
+    if (!val) return 0;
+    if (typeof (val as { toMillis?: () => number }).toMillis === 'function') {
+      return (val as { toMillis: () => number }).toMillis();
+    }
+    if (typeof (val as { seconds?: number }).seconds === 'number') {
+      return (val as { seconds: number }).seconds * 1000;
+    }
+    return 0;
+  };
+
   const jobsQuery = query(
     collection(db, 'jobs'),
-    where('ownerId', '==', ownerId),
-    orderBy('createdAt', 'desc')
+    where('ownerId', '==', ownerId)
   );
   const ledgerQuery = query(
     collection(db, 'ledger_entries'),
-    where('ownerId', '==', ownerId),
-    orderBy('createdAt', 'desc')
+    where('ownerId', '==', ownerId)
   );
   const methodsQuery = query(
     collection(db, 'payout_methods'),
-    where('ownerId', '==', ownerId),
-    orderBy('createdAt', 'desc')
+    where('ownerId', '==', ownerId)
   );
   const withdrawalsQuery = query(
     collection(db, 'withdrawals'),
-    where('ownerId', '==', ownerId),
-    orderBy('createdAt', 'desc')
+    where('ownerId', '==', ownerId)
   );
   const logsQuery = query(
     collection(db, 'audit_logs'),
-    where('ownerId', '==', ownerId),
-    orderBy('createdAt', 'desc')
+    where('ownerId', '==', ownerId)
   );
 
   const unsubJobs = onSnapshot(
     jobsQuery,
     (snap) => {
-      callbacks.onJobs(
-        snap.docs.map((d) => ({ id: d.id, ...(d.data() as Omit<JobRecord, 'id'>) }))
-      );
+      const docs = snap.docs
+        .map((d) => ({ id: d.id, ...(d.data() as Omit<JobRecord, 'id'>) }))
+        .sort((a, b) => getSortTime(b.createdAt) - getSortTime(a.createdAt));
+      callbacks.onJobs(docs);
     },
-    (err) => handleFirestoreError(err, OperationType.LIST, 'jobs')
+    (err) => {
+      console.warn('Firestore jobs query fallback:', err);
+      callbacks.onJobs(loadLocalStore(ownerId).jobs);
+    }
   );
 
   const unsubLedger = onSnapshot(
     ledgerQuery,
     (snap) => {
-      callbacks.onLedger(
-        snap.docs.map((d) => ({ id: d.id, ...(d.data() as Omit<LedgerEntry, 'id'>) }))
-      );
+      const docs = snap.docs
+        .map((d) => ({ id: d.id, ...(d.data() as Omit<LedgerEntry, 'id'>) }))
+        .sort((a, b) => getSortTime(b.createdAt) - getSortTime(a.createdAt));
+      callbacks.onLedger(docs);
     },
-    (err) => handleFirestoreError(err, OperationType.LIST, 'ledger_entries')
+    (err) => {
+      console.warn('Firestore ledger query fallback:', err);
+      callbacks.onLedger(loadLocalStore(ownerId).ledgerEntries);
+    }
   );
 
   const unsubMethods = onSnapshot(
     methodsQuery,
     (snap) => {
-      callbacks.onPayoutMethods(
-        snap.docs.map((d) => ({ id: d.id, ...(d.data() as Omit<PayoutMethod, 'id'>) }))
-      );
+      const docs = snap.docs
+        .map((d) => ({ id: d.id, ...(d.data() as Omit<PayoutMethod, 'id'>) }))
+        .sort((a, b) => getSortTime(b.createdAt) - getSortTime(a.createdAt));
+      callbacks.onPayoutMethods(docs);
     },
-    (err) => handleFirestoreError(err, OperationType.LIST, 'payout_methods')
+    (err) => {
+      console.warn('Firestore payout methods query fallback:', err);
+      callbacks.onPayoutMethods(loadLocalStore(ownerId).payoutMethods);
+    }
   );
 
   const unsubWithdrawals = onSnapshot(
     withdrawalsQuery,
     (snap) => {
-      callbacks.onWithdrawals(
-        snap.docs.map((d) => ({ id: d.id, ...(d.data() as Omit<WithdrawalRequest, 'id'>) }))
-      );
+      const docs = snap.docs
+        .map((d) => ({ id: d.id, ...(d.data() as Omit<WithdrawalRequest, 'id'>) }))
+        .sort((a, b) => getSortTime(b.createdAt) - getSortTime(a.createdAt));
+      callbacks.onWithdrawals(docs);
     },
-    (err) => handleFirestoreError(err, OperationType.LIST, 'withdrawals')
+    (err) => {
+      console.warn('Firestore withdrawals query fallback:', err);
+      callbacks.onWithdrawals(loadLocalStore(ownerId).withdrawals);
+    }
   );
 
   const unsubLogs = onSnapshot(
     logsQuery,
     (snap) => {
-      callbacks.onAuditLogs(
-        snap.docs.map((d) => ({ id: d.id, ...(d.data() as Omit<AuditLog, 'id'>) }))
-      );
+      const docs = snap.docs
+        .map((d) => ({ id: d.id, ...(d.data() as Omit<AuditLog, 'id'>) }))
+        .sort((a, b) => getSortTime(b.createdAt) - getSortTime(a.createdAt));
+      callbacks.onAuditLogs(docs);
     },
-    (err) => handleFirestoreError(err, OperationType.LIST, 'audit_logs')
+    (err) => {
+      console.warn('Firestore audit logs query fallback:', err);
+      callbacks.onAuditLogs(loadLocalStore(ownerId).auditLogs);
+    }
   );
 
   return () => {
