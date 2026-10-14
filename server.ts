@@ -1,4 +1,5 @@
 import crypto from 'crypto';
+import fs from 'fs';
 import path from 'path';
 import dotenv from 'dotenv';
 import express from 'express';
@@ -271,7 +272,6 @@ ${JSON.stringify(financialSnapshot || {}, null, 2)}`,
 
   // Dedicated Android APK Download Route
   app.get('/lifegraph-finops.apk', (_req, res) => {
-    const fs = require('fs');
     const possiblePaths = [
       path.join(process.cwd(), 'dist', 'lifegraph-finops.apk'),
       path.join(process.cwd(), 'public', 'lifegraph-finops.apk'),

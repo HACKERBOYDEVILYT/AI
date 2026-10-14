@@ -1576,7 +1576,11 @@ export function subscribeOwnerCollections(
       const docs = snap.docs
         .map((d) => ({ id: d.id, ...(d.data() as Omit<JobRecord, 'id'>) }))
         .sort((a, b) => getSortTime(b.createdAt) - getSortTime(a.createdAt));
-      callbacks.onJobs(docs);
+      if (docs.length > 0) {
+        callbacks.onJobs(docs);
+      } else {
+        callbacks.onJobs(loadLocalStore(ownerId).jobs);
+      }
     },
     (err) => {
       console.warn('Firestore jobs query fallback:', err);
@@ -1590,7 +1594,11 @@ export function subscribeOwnerCollections(
       const docs = snap.docs
         .map((d) => ({ id: d.id, ...(d.data() as Omit<LedgerEntry, 'id'>) }))
         .sort((a, b) => getSortTime(b.createdAt) - getSortTime(a.createdAt));
-      callbacks.onLedger(docs);
+      if (docs.length > 0) {
+        callbacks.onLedger(docs);
+      } else {
+        callbacks.onLedger(loadLocalStore(ownerId).ledgerEntries);
+      }
     },
     (err) => {
       console.warn('Firestore ledger query fallback:', err);
@@ -1604,7 +1612,11 @@ export function subscribeOwnerCollections(
       const docs = snap.docs
         .map((d) => ({ id: d.id, ...(d.data() as Omit<PayoutMethod, 'id'>) }))
         .sort((a, b) => getSortTime(b.createdAt) - getSortTime(a.createdAt));
-      callbacks.onPayoutMethods(docs);
+      if (docs.length > 0) {
+        callbacks.onPayoutMethods(docs);
+      } else {
+        callbacks.onPayoutMethods(loadLocalStore(ownerId).payoutMethods);
+      }
     },
     (err) => {
       console.warn('Firestore payout methods query fallback:', err);
@@ -1618,7 +1630,11 @@ export function subscribeOwnerCollections(
       const docs = snap.docs
         .map((d) => ({ id: d.id, ...(d.data() as Omit<WithdrawalRequest, 'id'>) }))
         .sort((a, b) => getSortTime(b.createdAt) - getSortTime(a.createdAt));
-      callbacks.onWithdrawals(docs);
+      if (docs.length > 0) {
+        callbacks.onWithdrawals(docs);
+      } else {
+        callbacks.onWithdrawals(loadLocalStore(ownerId).withdrawals);
+      }
     },
     (err) => {
       console.warn('Firestore withdrawals query fallback:', err);
@@ -1632,7 +1648,11 @@ export function subscribeOwnerCollections(
       const docs = snap.docs
         .map((d) => ({ id: d.id, ...(d.data() as Omit<AuditLog, 'id'>) }))
         .sort((a, b) => getSortTime(b.createdAt) - getSortTime(a.createdAt));
-      callbacks.onAuditLogs(docs);
+      if (docs.length > 0) {
+        callbacks.onAuditLogs(docs);
+      } else {
+        callbacks.onAuditLogs(loadLocalStore(ownerId).auditLogs);
+      }
     },
     (err) => {
       console.warn('Firestore audit logs query fallback:', err);

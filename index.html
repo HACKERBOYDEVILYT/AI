@@ -4,11 +4,13 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <script>
-      // Ensure trailing slash for GitHub Pages repo subpaths so relative assets load properly
+      // Ensure trailing slash only for GitHub Pages repository subpaths so relative assets load properly
       (function() {
-        var p = window.location.pathname;
-        if (p && !p.endsWith('/') && !p.split('/').pop().includes('.')) {
-          window.location.replace(p + '/' + window.location.search + window.location.hash);
+        if (window.location.hostname && window.location.hostname.includes('github.io')) {
+          var p = window.location.pathname;
+          if (p && !p.endsWith('/') && !p.split('/').pop().includes('.')) {
+            window.location.replace(p + '/' + window.location.search + window.location.hash);
+          }
         }
       })();
     </script>
@@ -68,7 +70,7 @@
     </div>
     <script type="module" src="/src/main.tsx"></script>
     <script>
-      if ('serviceWorker' in navigator && window.location.protocol === 'https:') {
+      if ('serviceWorker' in navigator && window.location.protocol === 'https:' && window.self === window.top) {
         window.addEventListener('load', () => {
           navigator.serviceWorker.register('./sw.js').catch(function(err) {
             console.warn('SW registration bypassed:', err);

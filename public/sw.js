@@ -71,8 +71,8 @@ self.addEventListener('fetch', (event) => {
       .catch(async () => {
         const cached = await caches.match(event.request);
         if (cached) return cached;
-        // Do not return undefined to respondWith - let the browser handle natural fetch failure
-        return new Response('', { status: 408, statusText: 'Request Timeout' });
+        // Do not return synthetic empty body; let natural network failure or browser retry handle it
+        throw new Error('Asset not found in offline cache.');
       })
   );
 });
