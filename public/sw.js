@@ -24,14 +24,18 @@ self.addEventListener('fetch', (event) => {
   if (event.request.method !== 'GET') return;
   const url = new URL(event.request.url);
 
-  // Never intercept API calls, Firebase endpoints, or dev server middleware
+  // Never intercept API calls, Firebase endpoints, dev server middleware, or APK downloads
   if (
     url.pathname.startsWith('/api/') ||
+    url.pathname.startsWith('/src/') ||
+    url.pathname.startsWith('/node_modules') ||
+    url.pathname.startsWith('/@vite') ||
+    url.pathname.startsWith('/@fs') ||
+    url.pathname.endsWith('.apk') ||
+    url.pathname.includes('lifegraph-finops') ||
     url.hostname.includes('firestore.googleapis.com') ||
     url.hostname.includes('googleapis.com') ||
-    url.hostname.includes('firebaseapp.com') ||
-    url.pathname.startsWith('/@vite') ||
-    url.pathname.startsWith('/@fs')
+    url.hostname.includes('firebaseapp.com')
   ) {
     return;
   }

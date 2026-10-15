@@ -61,19 +61,56 @@ export const PWAInstallButton: React.FC<PWAInstallButtonProps> = ({ onOpenWorkfl
             </div>
 
             <div className="space-y-4 text-xs text-slate-600 leading-relaxed">
-              {/* Method 1: Direct APK Download */}
+              {/* Method 1: Instant 1-Click PWA / WebAPK Install */}
+              <div className="p-4 rounded-md bg-emerald-50 border border-emerald-200 space-y-2.5">
+                <div className="flex items-center justify-between">
+                  <p className="font-bold text-emerald-950 flex items-center gap-1.5">
+                    <Smartphone className="h-4 w-4 text-emerald-700" />
+                    উপায় ১: এক ক্লিকে WebAPK ইন্সটল (সবচেয়ে সুবিধাজনক)
+                  </p>
+                  <span className="text-[10px] font-semibold bg-emerald-100 text-emerald-800 px-2 py-0.5 rounded">
+                    WebAPK
+                  </span>
+                </div>
+                <p className="text-emerald-950 text-xs leading-relaxed">
+                  Android Chrome / Edge থেকে সরাসরি আপনার ফোনের হোম স্ক্রিনে নেটিভ অ্যাপ আকারে যোগ করুন। কোনো আননোন সোর্স অনুমতি লাগবে না এবং অ্যাপ ড্রয়ারে আইকন তৈরি হবে।
+                </p>
+                {isInstallable ? (
+                  <button
+                    type="button"
+                    onClick={async () => {
+                      await install();
+                      setShowInstallModal(false);
+                    }}
+                    className="w-full py-2.5 px-4 text-xs font-semibold text-white bg-emerald-700 rounded-md hover:bg-emerald-800 transition-colors shadow-sm flex items-center justify-center gap-2"
+                  >
+                    <Smartphone className="h-4 w-4" />
+                    Install App on Device Now (WebAPK)
+                  </button>
+                ) : isIOS ? (
+                  <p className="text-[11px] text-emerald-900 bg-white/70 p-2.5 rounded border border-emerald-200">
+                    iPhone / iPad-এ: Safari ব্রাউজারের নিচে <strong>Share</strong> আইকনে চাপ দিয়ে <strong>Add to Home Screen</strong> সিলেক্ট করুন।
+                  </p>
+                ) : (
+                  <p className="text-[11px] text-emerald-900 bg-white/70 p-2.5 rounded border border-emerald-200">
+                    ব্রাউজারের ৩-ডট মেনু (<strong>⋮</strong>) চাপ দিয়ে <strong>&ldquo;Install App&rdquo;</strong> বা <strong>&ldquo;Add to Home screen&rdquo;</strong> সিলেক্ট করলেই অ্যাপ তৈরি হয়ে যাবে।
+                  </p>
+                )}
+              </div>
+
+              {/* Method 2: Direct APK Download */}
               <div className="p-4 rounded-md bg-blue-50 border border-blue-200 space-y-2.5">
                 <div className="flex items-center justify-between">
                   <p className="font-bold text-blue-950 flex items-center gap-1.5">
                     <Download className="h-4 w-4 text-blue-700" />
-                    উপায় ১: সরাসরি Android APK ফাইল ডাউনলোড
+                    উপায় ২: সরাসরি Android APK ফাইল ডাউনলোড
                   </p>
                   <span className="text-[10px] font-semibold bg-blue-100 text-blue-800 px-2 py-0.5 rounded">
                     Direct APK
                   </span>
                 </div>
-                <p className="text-blue-900 leading-relaxed">
-                  সার্ভার থেকে সরাসরি বিল্ডকৃত <strong className="font-mono">lifegraph-finops-v1.0.0.apk</strong> (1.3 MB) প্যাকেজটি ডাউনলোড করুন। আইফ্রেম ব্লকিং এড়াতে এটি নতুন ট্যাবে সরাসরি ডাউনলোড শুরু করবে।
+                <p className="text-blue-900 leading-relaxed text-xs">
+                  সার্ভার থেকে সরাসরি তৈরি করা <strong className="font-mono">lifegraph-finops-v1.0.0.apk</strong> (1.3 MB) প্যাকেজটি ডাউনলোড করুন। সরাসরি ডাউনলোড শুরু করতে নিচের বাটনে চাপ দিন:
                 </p>
                 <div className="flex flex-col sm:flex-row gap-2 pt-1">
                   <a
@@ -109,41 +146,6 @@ export const PWAInstallButton: React.FC<PWAInstallButtonProps> = ({ onOpenWorkfl
                     )}
                   </button>
                 </div>
-              </div>
-
-              {/* Method 2: Instant 1-Click PWA Install */}
-              <div className="p-4 rounded-md bg-emerald-50 border border-emerald-200 space-y-2">
-                <div className="flex items-center justify-between">
-                  <p className="font-bold text-emerald-950">
-                    উপায় ২: ব্রাউজার থেকে সরাসরি অ্যাপ ইন্সটল (PWA)
-                  </p>
-                  <span className="text-[10px] font-semibold bg-emerald-100 text-emerald-800 px-2 py-0.5 rounded">
-                    দ্রুততম
-                  </span>
-                </div>
-                <p className="text-emerald-950">
-                  Android Chrome / Edge ব্রাউজার থেকে সরাসরি হোম স্ক্রিনে অ্যাপ আকারে যুক্ত করে নিন। কোনো আননোন সোর্স অনুমতি লাগবে না।
-                </p>
-                {isInstallable ? (
-                  <button
-                    type="button"
-                    onClick={async () => {
-                      await install();
-                      setShowInstallModal(false);
-                    }}
-                    className="w-full py-2.5 px-4 text-xs font-semibold text-white bg-emerald-700 rounded-md hover:bg-emerald-800 transition-colors"
-                  >
-                    Install App on Device Now
-                  </button>
-                ) : isIOS ? (
-                  <p className="text-[11px] text-emerald-900">
-                    iPhone / iPad-এ: Safari ব্রাউজারের নিচে <strong>Share</strong> আইকনে চাপ দিয়ে <strong>Add to Home Screen</strong> সিলেক্ট করুন।
-                  </p>
-                ) : (
-                  <p className="text-[11px] text-emerald-900">
-                    Chrome মেনু (<strong>⋮</strong>) খুলে <strong>&ldquo;Install App&rdquo;</strong> বা <strong>&ldquo;Add to Home screen&rdquo;</strong> সিলেক্ট করুন।
-                  </p>
-                )}
               </div>
 
               {/* Method 3: GitHub Actions & Releases Compiled APK */}

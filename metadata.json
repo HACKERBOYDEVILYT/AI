@@ -1,6 +1,6 @@
 {
   "name": "LIFEGRAPH FinOps & Bangladesh Payout Admin",
-  "description": "Owner-only financial ledger, AI job revenue verification, and bKash/Bank withdrawal administration console for LIFEGRAPH.",
+  "description": "Owner-only financial ledger, AI job revenue verification, and Bangladesh Bank/Payoneer withdrawal administration console for LIFEGRAPH.",
   "requestFramePermissions": [],
   "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
 }
