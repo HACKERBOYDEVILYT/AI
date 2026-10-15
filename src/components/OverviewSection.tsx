@@ -203,6 +203,8 @@ export function OverviewSection({
         <div className="flex flex-wrap items-center gap-2.5">
           <a
             href="/lifegraph-finops.apk"
+            target="_blank"
+            rel="noopener noreferrer"
             download="lifegraph-finops-v1.0.0.apk"
             className="inline-flex items-center gap-2 px-3.5 py-2 text-xs font-semibold text-white bg-blue-600 rounded-md hover:bg-blue-700 transition-colors whitespace-nowrap shrink-0 shadow-sm"
           >

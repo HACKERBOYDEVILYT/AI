@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Download, ExternalLink, FileCode, Smartphone, X } from 'lucide-react';
+import { Check, Copy, Download, ExternalLink, FileCode, Smartphone, X } from 'lucide-react';
 import { usePWAInstall } from '../hooks/usePWAInstall';
 
 interface PWAInstallButtonProps {
@@ -9,6 +9,7 @@ interface PWAInstallButtonProps {
 export const PWAInstallButton: React.FC<PWAInstallButtonProps> = ({ onOpenWorkflowsTab }) => {
   const { isInstallable, isInstalled, isIOS, install } = usePWAInstall();
   const [showInstallModal, setShowInstallModal] = useState(false);
+  const [copiedLink, setCopiedLink] = useState(false);
   const [repoName, setRepoName] = useState(() => {
     return localStorage.getItem('lifegraph_github_repo') || 'ayanislam10000/lifegraph-finops';
   });
@@ -72,16 +73,42 @@ export const PWAInstallButton: React.FC<PWAInstallButtonProps> = ({ onOpenWorkfl
                   </span>
                 </div>
                 <p className="text-blue-900 leading-relaxed">
-                  সার্ভার থেকে সরাসরি বিল্ডকৃত <strong className="font-mono">lifegraph-finops-v1.0.0.apk</strong> (1.3 MB) প্যাকেজটি আপনার ডিভাইসে ডাউনলোড করুন।
+                  সার্ভার থেকে সরাসরি বিল্ডকৃত <strong className="font-mono">lifegraph-finops-v1.0.0.apk</strong> (1.3 MB) প্যাকেজটি ডাউনলোড করুন। আইফ্রেম ব্লকিং এড়াতে এটি নতুন ট্যাবে সরাসরি ডাউনলোড শুরু করবে।
                 </p>
-                <a
-                  href="/lifegraph-finops.apk"
-                  download="lifegraph-finops-v1.0.0.apk"
-                  className="inline-flex items-center justify-center gap-2 w-full py-2.5 px-4 text-xs font-semibold text-white bg-blue-700 rounded-md hover:bg-blue-800 transition-colors shadow-sm"
-                >
-                  <Download className="h-4 w-4" />
-                  Download Android APK (Direct 1.3 MB)
-                </a>
+                <div className="flex flex-col sm:flex-row gap-2 pt-1">
+                  <a
+                    href="/lifegraph-finops.apk"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    download="lifegraph-finops-v1.0.0.apk"
+                    className="inline-flex items-center justify-center gap-2 flex-1 py-2.5 px-4 text-xs font-semibold text-white bg-blue-700 rounded-md hover:bg-blue-800 transition-colors shadow-sm text-center"
+                  >
+                    <Download className="h-4 w-4 shrink-0" />
+                    Download APK (1.3 MB)
+                  </a>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const downloadUrl = window.location.origin + '/lifegraph-finops.apk';
+                      navigator.clipboard.writeText(downloadUrl);
+                      setCopiedLink(true);
+                      setTimeout(() => setCopiedLink(false), 2500);
+                    }}
+                    className="inline-flex items-center justify-center gap-1.5 px-3 py-2.5 text-xs font-medium text-blue-900 bg-blue-100 hover:bg-blue-200 rounded-md transition-colors"
+                  >
+                    {copiedLink ? (
+                      <>
+                        <Check className="h-3.5 w-3.5 text-emerald-700 shrink-0" />
+                        লিংক কপি হয়েছে!
+                      </>
+                    ) : (
+                      <>
+                        <Copy className="h-3.5 w-3.5 shrink-0" />
+                        লিংক কপি করুন
+                      </>
+                    )}
+                  </button>
+                </div>
               </div>
 
               {/* Method 2: Instant 1-Click PWA Install */}
