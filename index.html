@@ -70,12 +70,28 @@
     </div>
     <script type="module" src="/src/main.tsx"></script>
     <script>
-      if ('serviceWorker' in navigator && window.location.protocol === 'https:' && window.self === window.top) {
-        window.addEventListener('load', () => {
-          navigator.serviceWorker.register('./sw.js').catch(function(err) {
-            console.warn('SW registration bypassed:', err);
+      // Clean up any stale service workers or caches on development/preview hosts
+      if ('serviceWorker' in navigator) {
+        if (window.location.hostname.includes('run.app') || window.location.hostname === 'localhost' || window.self !== window.top) {
+          navigator.serviceWorker.getRegistrations().then(function(regs) {
+            for (var i = 0; i < regs.length; i++) {
+              regs[i].unregister();
+            }
           });
-        });
+          if ('caches' in window) {
+            caches.keys().then(function(names) {
+              for (var i = 0; i < names.length; i++) {
+                caches.delete(names[i]);
+              }
+            });
+          }
+        } else if (window.location.protocol === 'https:' && window.self === window.top) {
+          window.addEventListener('load', function() {
+            navigator.serviceWorker.register('./sw.js').catch(function(err) {
+              console.warn('SW registration bypassed:', err);
+            });
+          });
+        }
       }
     </script>
   </body>

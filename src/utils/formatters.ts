@@ -6,11 +6,18 @@ export function formatBdt(amount: number): string {
   return `৳${rounded.toLocaleString('en-IN')}`;
 }
 
-export function formatTimestamp(ts: Timestamp | undefined | null): string {
-  if (!ts || typeof ts.toDate !== 'function') {
+export function formatTimestamp(ts: Timestamp | { seconds?: number; toDate?: () => Date } | undefined | null): string {
+  if (!ts) {
     return 'Just now';
   }
-  const d = ts.toDate();
+  let d: Date;
+  if (typeof ts.toDate === 'function') {
+    d = ts.toDate();
+  } else if (typeof ts.seconds === 'number') {
+    d = new Date(ts.seconds * 1000);
+  } else {
+    return 'Just now';
+  }
   return d.toLocaleString('en-GB', {
     day: '2-digit',
     month: 'short',
@@ -20,11 +27,19 @@ export function formatTimestamp(ts: Timestamp | undefined | null): string {
   });
 }
 
-export function formatShortDate(ts: Timestamp | undefined | null): string {
-  if (!ts || typeof ts.toDate !== 'function') {
+export function formatShortDate(ts: Timestamp | { seconds?: number; toDate?: () => Date } | undefined | null): string {
+  if (!ts) {
     return new Date().toLocaleDateString('en-GB', { day: '2-digit', month: 'short' });
   }
-  return ts.toDate().toLocaleDateString('en-GB', {
+  let d: Date;
+  if (typeof ts.toDate === 'function') {
+    d = ts.toDate();
+  } else if (typeof ts.seconds === 'number') {
+    d = new Date(ts.seconds * 1000);
+  } else {
+    return new Date().toLocaleDateString('en-GB', { day: '2-digit', month: 'short' });
+  }
+  return d.toLocaleDateString('en-GB', {
     day: '2-digit',
     month: 'short',
   });

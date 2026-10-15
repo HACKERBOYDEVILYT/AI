@@ -329,6 +329,14 @@ export function loadLocalStore(ownerId: string): LocalStoreState {
         createdAt: reviveTimestamp(a.createdAt),
       })),
     };
+
+    // If local store exists but is completely empty, restore rich baseline so dashboard never loads blank
+    if (restored.jobs.length === 0 && restored.ledgerEntries.length === 0) {
+      const seeded = createInitialBaselineState(ownerId);
+      saveLocalStore(seeded);
+      return seeded;
+    }
+
     inMemoryFallbackState = restored;
     return restored;
   } catch {

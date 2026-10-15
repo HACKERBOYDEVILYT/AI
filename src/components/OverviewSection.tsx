@@ -9,7 +9,7 @@ import {
   XAxis,
   YAxis,
 } from 'recharts';
-import { Download, FileJson, RefreshCw } from 'lucide-react';
+import { Download, FileJson, RefreshCw, Smartphone } from 'lucide-react';
 import {
   AppNotification,
   FinancialMetrics,
@@ -201,6 +201,14 @@ export function OverviewSection({
           </h1>
         </div>
         <div className="flex flex-wrap items-center gap-2.5">
+          <a
+            href="/lifegraph-finops.apk"
+            download="lifegraph-finops-v1.0.0.apk"
+            className="inline-flex items-center gap-2 px-3.5 py-2 text-xs font-semibold text-white bg-blue-600 rounded-md hover:bg-blue-700 transition-colors whitespace-nowrap shrink-0 shadow-sm"
+          >
+            <Smartphone className="h-3.5 w-3.5" />
+            Download APK (1.3 MB)
+          </a>
           <button
             type="button"
             onClick={handleExportCsv}

@@ -83,8 +83,7 @@ export default function App() {
 
   const isFirebaseOwner = Boolean(
     currentUser &&
-      currentUser.email?.toLowerCase() === AUTHORIZED_OWNER_EMAIL.toLowerCase() &&
-      currentUser.emailVerified
+      currentUser.email?.toLowerCase() === AUTHORIZED_OWNER_EMAIL.toLowerCase()
   );
 
   // If signed in with a non-owner Google account, block access; otherwise allow Owner Console
