@@ -119,6 +119,19 @@ jobs:
             firestore.rules
         env:
           GITHUB_TOKEN: \${{ secrets.GITHUB_TOKEN }}
+
+      - name: Fallback Release using GitHub CLI (if token has write access)
+        if: steps.create_release.outcome != 'success'
+        run: |
+          echo "softprops action encountered a note. Attempting fallback release via GitHub CLI..."
+          TAG="\${{ github.event.inputs.tag_name || format('v1.0.{0}', github.run_number) }}"
+          gh release create "$TAG" \\
+            build-output/lifegraph-finops-v1.0.0.apk \\
+            lifegraph-finops-web-dist.zip \\
+            --title "Release $TAG — LIFEGRAPH FinOps Android APK" \\
+            --notes "Automated Android APK and web bundle release for LIFEGRAPH FinOps." || echo "NOTE: If this failed, please enable 'Read and write permissions' under Repo Settings -> Actions -> General -> Workflow permissions."
+        env:
+          GH_TOKEN: \${{ secrets.GITHUB_TOKEN }}
 `;
 
 export const WEBSITE_YML_CONTENT = `name: Deploy Website to GitHub Pages
