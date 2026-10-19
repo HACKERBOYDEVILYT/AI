@@ -1,0 +1,1053 @@
+{
+  "users": [
+    {
+      "id": "usr-admin-001",
+      "email": "ayanislam10000@gmail.com",
+      "passwordHash": "019763641648a489dcd94af05d514933455a62a8553b353c6f5c1eb92275e22e",
+      "name": "Ayan Islam (DevPilot Admin)",
+      "role": "admin",
+      "phone": "+880 1800-000000",
+      "company": "DevPilot Digital Agency",
+      "avatar": "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150",
+      "emailVerified": true,
+      "status": "active",
+      "createdAt": "2026-10-18T00:00:00.000Z",
+      "preferredLanguage": "bn"
+    },
+    {
+      "id": "usr-cust-001",
+      "email": "tanvir@techcorp.com",
+      "passwordHash": "6c7802b3165d8cfcb7677007f3e2e3812eaf9935a9224b50586c63a733eeafcb",
+      "name": "Tanvir Ahmed",
+      "role": "customer",
+      "phone": "+880 1711-223344",
+      "company": "Dhaka E-Commerce Ltd",
+      "avatar": "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150",
+      "emailVerified": true,
+      "status": "active",
+      "createdAt": "2026-10-18T01:00:00.000Z",
+      "preferredLanguage": "bn"
+    },
+    {
+      "id": "usr-1792370859260-iyoz",
+      "email": "customer_1792370859246@testcorp.com",
+      "passwordHash": "8ac68d5f3e8bcd73b39594911bc6151badd9f9f533da1f7be9402d23e6bbbd27",
+      "name": "Rahim Chowdhury",
+      "role": "customer",
+      "phone": "+8801712345678",
+      "company": "Chowdhury Tech",
+      "avatar": "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=150",
+      "emailVerified": true,
+      "status": "active",
+      "createdAt": "2026-10-19T00:47:39.260Z",
+      "preferredLanguage": "bn"
+    },
+    {
+      "id": "usr-1792370874500-zn85",
+      "email": "customer_1792370874496@testcorp.com",
+      "passwordHash": "8ac68d5f3e8bcd73b39594911bc6151badd9f9f533da1f7be9402d23e6bbbd27",
+      "name": "Rahim Chowdhury",
+      "role": "customer",
+      "phone": "+8801712345678",
+      "company": "Chowdhury Tech",
+      "avatar": "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=150",
+      "emailVerified": true,
+      "status": "active",
+      "createdAt": "2026-10-19T00:47:54.500Z",
+      "preferredLanguage": "bn"
+    },
+    {
+      "id": "usr-1792370898986-mdxf",
+      "email": "customer_1792370898982@testcorp.com",
+      "passwordHash": "8ac68d5f3e8bcd73b39594911bc6151badd9f9f533da1f7be9402d23e6bbbd27",
+      "name": "Rahim Chowdhury",
+      "role": "customer",
+      "phone": "+8801712345678",
+      "company": "Chowdhury Tech",
+      "avatar": "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=150",
+      "emailVerified": true,
+      "status": "active",
+      "createdAt": "2026-10-19T00:48:18.986Z",
+      "preferredLanguage": "bn"
+    },
+    {
+      "id": "usr-1792370909906-g8kd",
+      "email": "customer_1792370909903@testcorp.com",
+      "passwordHash": "8ac68d5f3e8bcd73b39594911bc6151badd9f9f533da1f7be9402d23e6bbbd27",
+      "name": "Rahim Chowdhury",
+      "role": "customer",
+      "phone": "+8801712345678",
+      "company": "Chowdhury Tech",
+      "avatar": "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=150",
+      "emailVerified": true,
+      "status": "active",
+      "createdAt": "2026-10-19T00:48:29.906Z",
+      "preferredLanguage": "bn"
+    },
+    {
+      "id": "usr-1792372105626-nz30",
+      "email": "customer_1792372105612@testcorp.com",
+      "passwordHash": "8ac68d5f3e8bcd73b39594911bc6151badd9f9f533da1f7be9402d23e6bbbd27",
+      "name": "Rahim Chowdhury",
+      "role": "customer",
+      "phone": "+8801712345678",
+      "company": "Chowdhury Tech",
+      "avatar": "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=150",
+      "emailVerified": true,
+      "status": "active",
+      "createdAt": "2026-10-19T01:08:25.626Z",
+      "preferredLanguage": "bn"
+    }
+  ],
+  "orders": [
+    {
+      "id": "DP-ORD-2026-005",
+      "customerId": "usr-1792372105626-nz30",
+      "customerName": "Rahim Chowdhury",
+      "customerEmail": "customer_1792372105612@testcorp.com",
+      "customerPhone": "+8801712345678",
+      "serviceId": "svc-bug-fix",
+      "serviceTitleBn": "ওয়েবসাইট ও স্ক্রিপ্ট বাগ ফিক্সিং",
+      "serviceTitleEn": "Website & Script Bug Fixing",
+      "category": "bug_fix",
+      "status": "completed",
+      "paymentStatus": "paid",
+      "priceBdt": 2000,
+      "projectRequirements": "React hydrate error in production header component and broken mobile menu.",
+      "attachments": [],
+      "deliveries": [
+        {
+          "notes": "Fixed the hydration issue in Header.tsx and optimized mobile drawer animation.",
+          "files": [
+            {
+              "name": "patch-header-fix.zip",
+              "url": "https://storage.devpilot.app/files/patch-header-fix.zip",
+              "sizeKb": 240
+            }
+          ],
+          "submittedAt": "2026-10-19T01:08:25.666Z"
+        },
+        {
+          "notes": "Updated button padding to 48px tap target.",
+          "files": [],
+          "submittedAt": "2026-10-19T01:08:25.671Z"
+        }
+      ],
+      "revisionRequests": [
+        {
+          "reason": "Please adjust hamburger button tap target size on small screens.",
+          "requestedAt": "2026-10-19T01:08:25.669Z",
+          "status": "open"
+        }
+      ],
+      "createdAt": "2026-10-19T01:08:25.637Z",
+      "updatedAt": "2026-10-19T01:08:25.673Z",
+      "quotationAmountBdt": 2000,
+      "quotationNote": "Includes SSR bug fix and responsive optimization",
+      "payment": {
+        "method": "bkash",
+        "trxId": "BKASH1792372105650",
+        "senderAccount": "01711223344",
+        "amountBdt": 2000,
+        "submittedAt": "2026-10-19T01:08:25.652Z",
+        "notes": "Paid via bKash Personal App",
+        "verifiedAt": "2026-10-19T01:08:25.660Z",
+        "verifiedBy": "ayanislam10000@gmail.com",
+        "isLocked": true
+      }
+    },
+    {
+      "id": "DP-ORD-2026-004",
+      "customerId": "usr-1792370909906-g8kd",
+      "customerName": "Rahim Chowdhury",
+      "customerEmail": "customer_1792370909903@testcorp.com",
+      "customerPhone": "+8801712345678",
+      "serviceId": "svc-bug-fix",
+      "serviceTitleBn": "ওয়েবসাইট ও স্ক্রিপ্ট বাগ ফিক্সিং",
+      "serviceTitleEn": "Website & Script Bug Fixing",
+      "category": "bug_fix",
+      "status": "completed",
+      "paymentStatus": "paid",
+      "priceBdt": 2000,
+      "projectRequirements": "React hydrate error in production header component and broken mobile menu.",
+      "attachments": [],
+      "deliveries": [
+        {
+          "notes": "Fixed the hydration issue in Header.tsx and optimized mobile drawer animation.",
+          "files": [
+            {
+              "name": "patch-header-fix.zip",
+              "url": "https://storage.devpilot.app/files/patch-header-fix.zip",
+              "sizeKb": 240
+            }
+          ],
+          "submittedAt": "2026-10-19T00:48:29.940Z"
+        },
+        {
+          "notes": "Updated button padding to 48px tap target.",
+          "files": [],
+          "submittedAt": "2026-10-19T00:48:29.945Z"
+        }
+      ],
+      "revisionRequests": [
+        {
+          "reason": "Please adjust hamburger button tap target size on small screens.",
+          "requestedAt": "2026-10-19T00:48:29.943Z",
+          "status": "open"
+        }
+      ],
+      "createdAt": "2026-10-19T00:48:29.916Z",
+      "updatedAt": "2026-10-19T00:48:29.947Z",
+      "quotationAmountBdt": 2000,
+      "quotationNote": "Includes SSR bug fix and responsive optimization",
+      "payment": {
+        "method": "bkash",
+        "trxId": "BKASH1792370909928",
+        "senderAccount": "01711223344",
+        "amountBdt": 2000,
+        "submittedAt": "2026-10-19T00:48:29.930Z",
+        "notes": "Paid via bKash Personal App",
+        "verifiedAt": "2026-10-19T00:48:29.936Z",
+        "verifiedBy": "ayanislam10000@gmail.com",
+        "isLocked": true
+      }
+    },
+    {
+      "id": "DP-ORD-2026-003",
+      "customerId": "usr-1792370898986-mdxf",
+      "customerName": "Rahim Chowdhury",
+      "customerEmail": "customer_1792370898982@testcorp.com",
+      "customerPhone": "+8801712345678",
+      "serviceId": "svc-bug-fix",
+      "serviceTitleBn": "ওয়েবসাইট ও স্ক্রিপ্ট বাগ ফিক্সিং",
+      "serviceTitleEn": "Website & Script Bug Fixing",
+      "category": "bug_fix",
+      "status": "completed",
+      "paymentStatus": "paid",
+      "priceBdt": 2000,
+      "projectRequirements": "React hydrate error in production header component and broken mobile menu.",
+      "attachments": [],
+      "deliveries": [
+        {
+          "notes": "Fixed the hydration issue in Header.tsx and optimized mobile drawer animation.",
+          "files": [
+            {
+              "name": "patch-header-fix.zip",
+              "url": "https://storage.devpilot.app/files/patch-header-fix.zip",
+              "sizeKb": 240
+            }
+          ],
+          "submittedAt": "2026-10-19T00:48:19.019Z"
+        },
+        {
+          "notes": "Updated button padding to 48px tap target.",
+          "files": [],
+          "submittedAt": "2026-10-19T00:48:19.023Z"
+        }
+      ],
+      "revisionRequests": [
+        {
+          "reason": "Please adjust hamburger button tap target size on small screens.",
+          "requestedAt": "2026-10-19T00:48:19.021Z",
+          "status": "open"
+        }
+      ],
+      "createdAt": "2026-10-19T00:48:18.997Z",
+      "updatedAt": "2026-10-19T00:48:19.025Z",
+      "quotationAmountBdt": 2000,
+      "quotationNote": "Includes SSR bug fix and responsive optimization",
+      "payment": {
+        "method": "bkash",
+        "trxId": "BKASH1792370899007",
+        "senderAccount": "01711223344",
+        "amountBdt": 2000,
+        "submittedAt": "2026-10-19T00:48:19.009Z",
+        "notes": "Paid via bKash Personal App",
+        "verifiedAt": "2026-10-19T00:48:19.014Z",
+        "verifiedBy": "ayanislam10000@gmail.com",
+        "isLocked": true
+      }
+    },
+    {
+      "id": "DP-ORD-2026-002",
+      "customerId": "usr-1792370874500-zn85",
+      "customerName": "Rahim Chowdhury",
+      "customerEmail": "customer_1792370874496@testcorp.com",
+      "customerPhone": "+8801712345678",
+      "serviceId": "svc-bug-fix",
+      "serviceTitleBn": "ওয়েবসাইট ও স্ক্রিপ্ট বাগ ফিক্সিং",
+      "serviceTitleEn": "Website & Script Bug Fixing",
+      "category": "bug_fix",
+      "status": "completed",
+      "paymentStatus": "paid",
+      "priceBdt": 2000,
+      "projectRequirements": "React hydrate error in production header component and broken mobile menu.",
+      "attachments": [],
+      "deliveries": [
+        {
+          "notes": "Fixed the hydration issue in Header.tsx and optimized mobile drawer animation.",
+          "files": [
+            {
+              "name": "patch-header-fix.zip",
+              "url": "https://storage.devpilot.app/files/patch-header-fix.zip",
+              "sizeKb": 240
+            }
+          ],
+          "submittedAt": "2026-10-19T00:47:54.534Z"
+        },
+        {
+          "notes": "Updated button padding to 48px tap target.",
+          "files": [],
+          "submittedAt": "2026-10-19T00:47:54.539Z"
+        }
+      ],
+      "revisionRequests": [
+        {
+          "reason": "Please adjust hamburger button tap target size on small screens.",
+          "requestedAt": "2026-10-19T00:47:54.537Z",
+          "status": "open"
+        }
+      ],
+      "createdAt": "2026-10-19T00:47:54.512Z",
+      "updatedAt": "2026-10-19T00:47:54.541Z",
+      "quotationAmountBdt": 2000,
+      "quotationNote": "Includes SSR bug fix and responsive optimization",
+      "payment": {
+        "method": "bkash",
+        "trxId": "BKASH1792370874523",
+        "senderAccount": "01711223344",
+        "amountBdt": 2000,
+        "submittedAt": "2026-10-19T00:47:54.524Z",
+        "notes": "Paid via bKash Personal App",
+        "verifiedAt": "2026-10-19T00:47:54.529Z",
+        "verifiedBy": "ayanislam10000@gmail.com",
+        "isLocked": true
+      }
+    },
+    {
+      "id": "DP-ORD-2026-001",
+      "customerId": "usr-1792370859260-iyoz",
+      "customerName": "Rahim Chowdhury",
+      "customerEmail": "customer_1792370859246@testcorp.com",
+      "customerPhone": "+8801712345678",
+      "serviceId": "svc-bug-fix",
+      "serviceTitleBn": "ওয়েবসাইট ও স্ক্রিপ্ট বাগ ফিক্সিং",
+      "serviceTitleEn": "Website & Script Bug Fixing",
+      "category": "bug_fix",
+      "status": "completed",
+      "paymentStatus": "paid",
+      "priceBdt": 2000,
+      "projectRequirements": "React hydrate error in production header component and broken mobile menu.",
+      "attachments": [],
+      "deliveries": [
+        {
+          "notes": "Fixed the hydration issue in Header.tsx and optimized mobile drawer animation.",
+          "files": [
+            {
+              "name": "patch-header-fix.zip",
+              "url": "https://storage.devpilot.app/files/patch-header-fix.zip",
+              "sizeKb": 240
+            }
+          ],
+          "submittedAt": "2026-10-19T00:47:39.304Z"
+        },
+        {
+          "notes": "Updated button padding to 48px tap target.",
+          "files": [],
+          "submittedAt": "2026-10-19T00:47:39.310Z"
+        }
+      ],
+      "revisionRequests": [
+        {
+          "reason": "Please adjust hamburger button tap target size on small screens.",
+          "requestedAt": "2026-10-19T00:47:39.308Z",
+          "status": "open"
+        }
+      ],
+      "createdAt": "2026-10-19T00:47:39.272Z",
+      "updatedAt": "2026-10-19T00:47:39.312Z",
+      "quotationAmountBdt": 2000,
+      "quotationNote": "Includes SSR bug fix and responsive optimization",
+      "payment": {
+        "method": "bkash",
+        "trxId": "BKASH1792370859292",
+        "senderAccount": "01711223344",
+        "amountBdt": 2000,
+        "submittedAt": "2026-10-19T00:47:39.294Z",
+        "notes": "Paid via bKash Personal App",
+        "verifiedAt": "2026-10-19T00:47:39.300Z",
+        "verifiedBy": "ayanislam10000@gmail.com",
+        "isLocked": true
+      }
+    }
+  ],
+  "paymentsHistory": [
+    {
+      "id": "pay-1792370859294-5dtq",
+      "orderId": "DP-ORD-2026-001",
+      "customerId": "usr-1792370859260-iyoz",
+      "amountBdt": 2000,
+      "method": "bkash",
+      "trxId": "BKASH1792370859292",
+      "senderAccount": "01711223344",
+      "status": "paid",
+      "submittedAt": "2026-10-19T00:47:39.294Z",
+      "verifiedAt": "2026-10-19T00:47:39.300Z",
+      "verifiedBy": "ayanislam10000@gmail.com"
+    },
+    {
+      "id": "pay-1792370874524-p52g",
+      "orderId": "DP-ORD-2026-002",
+      "customerId": "usr-1792370874500-zn85",
+      "amountBdt": 2000,
+      "method": "bkash",
+      "trxId": "BKASH1792370874523",
+      "senderAccount": "01711223344",
+      "status": "paid",
+      "submittedAt": "2026-10-19T00:47:54.524Z",
+      "verifiedAt": "2026-10-19T00:47:54.529Z",
+      "verifiedBy": "ayanislam10000@gmail.com"
+    },
+    {
+      "id": "pay-1792370899009-54zw",
+      "orderId": "DP-ORD-2026-003",
+      "customerId": "usr-1792370898986-mdxf",
+      "amountBdt": 2000,
+      "method": "bkash",
+      "trxId": "BKASH1792370899007",
+      "senderAccount": "01711223344",
+      "status": "paid",
+      "submittedAt": "2026-10-19T00:48:19.009Z",
+      "verifiedAt": "2026-10-19T00:48:19.014Z",
+      "verifiedBy": "ayanislam10000@gmail.com"
+    },
+    {
+      "id": "pay-1792370909930-yg8q",
+      "orderId": "DP-ORD-2026-004",
+      "customerId": "usr-1792370909906-g8kd",
+      "amountBdt": 2000,
+      "method": "bkash",
+      "trxId": "BKASH1792370909928",
+      "senderAccount": "01711223344",
+      "status": "paid",
+      "submittedAt": "2026-10-19T00:48:29.930Z",
+      "verifiedAt": "2026-10-19T00:48:29.936Z",
+      "verifiedBy": "ayanislam10000@gmail.com"
+    },
+    {
+      "id": "pay-1792372105652-emhh",
+      "orderId": "DP-ORD-2026-005",
+      "customerId": "usr-1792372105626-nz30",
+      "amountBdt": 2000,
+      "method": "bkash",
+      "trxId": "BKASH1792372105650",
+      "senderAccount": "01711223344",
+      "status": "paid",
+      "submittedAt": "2026-10-19T01:08:25.652Z",
+      "verifiedAt": "2026-10-19T01:08:25.660Z",
+      "verifiedBy": "ayanislam10000@gmail.com"
+    }
+  ],
+  "invoices": [
+    {
+      "id": "DP-INV-2026-001",
+      "orderId": "DP-ORD-2026-001",
+      "customerId": "usr-1792370859260-iyoz",
+      "amountBdt": 2000,
+      "method": "bkash",
+      "trxId": "BKASH1792370859292",
+      "status": "paid",
+      "issuedAt": "2026-10-19T00:47:39.300Z"
+    },
+    {
+      "id": "DP-INV-2026-002",
+      "orderId": "DP-ORD-2026-002",
+      "customerId": "usr-1792370874500-zn85",
+      "amountBdt": 2000,
+      "method": "bkash",
+      "trxId": "BKASH1792370874523",
+      "status": "paid",
+      "issuedAt": "2026-10-19T00:47:54.529Z"
+    },
+    {
+      "id": "DP-INV-2026-003",
+      "orderId": "DP-ORD-2026-003",
+      "customerId": "usr-1792370898986-mdxf",
+      "amountBdt": 2000,
+      "method": "bkash",
+      "trxId": "BKASH1792370899007",
+      "status": "paid",
+      "issuedAt": "2026-10-19T00:48:19.014Z"
+    },
+    {
+      "id": "DP-INV-2026-004",
+      "orderId": "DP-ORD-2026-004",
+      "customerId": "usr-1792370909906-g8kd",
+      "amountBdt": 2000,
+      "method": "bkash",
+      "trxId": "BKASH1792370909928",
+      "status": "paid",
+      "issuedAt": "2026-10-19T00:48:29.936Z"
+    },
+    {
+      "id": "DP-INV-2026-005",
+      "orderId": "DP-ORD-2026-005",
+      "customerId": "usr-1792372105626-nz30",
+      "amountBdt": 2000,
+      "method": "bkash",
+      "trxId": "BKASH1792372105650",
+      "status": "paid",
+      "issuedAt": "2026-10-19T01:08:25.660Z"
+    }
+  ],
+  "tickets": [],
+  "expenses": [],
+  "auditLogs": [
+    {
+      "id": "aud-1792372105676-wll5",
+      "action": "EXPENSE_RECORDED",
+      "actor": "ayanislam10000@gmail.com",
+      "details": "অপারেশনাল খরচ লিপিবদ্ধ: Vercel Pro & Domain Renewal (৳500)",
+      "targetId": "exp-1792372105676-44c6",
+      "timestamp": "2026-10-19T01:08:25.676Z"
+    },
+    {
+      "id": "aud-1792372105674-aex2",
+      "action": "ORDER_COMPLETED",
+      "actor": "customer_1792372105612@testcorp.com",
+      "details": "অর্ডার সফলভাবে সম্পন্ন হয়েছে #DP-ORD-2026-005",
+      "targetId": "DP-ORD-2026-005",
+      "timestamp": "2026-10-19T01:08:25.674Z"
+    },
+    {
+      "id": "aud-1792372105671-zz3k",
+      "action": "DELIVERY_SUBMITTED",
+      "actor": "ayanislam10000@gmail.com",
+      "details": "অর্ডারের ডেলিভারি সাবমিট করা হয়েছে #DP-ORD-2026-005",
+      "targetId": "DP-ORD-2026-005",
+      "timestamp": "2026-10-19T01:08:25.672Z"
+    },
+    {
+      "id": "aud-1792372105669-2f6v",
+      "action": "REVISION_REQUESTED",
+      "actor": "customer_1792372105612@testcorp.com",
+      "details": "রিভিশন চাওয়া হয়েছে #DP-ORD-2026-005: Please adjust hamburger button tap target size on small screens.",
+      "targetId": "DP-ORD-2026-005",
+      "timestamp": "2026-10-19T01:08:25.669Z"
+    },
+    {
+      "id": "aud-1792372105666-j4nn",
+      "action": "DELIVERY_SUBMITTED",
+      "actor": "ayanislam10000@gmail.com",
+      "details": "অর্ডারের ডেলিভারি সাবমিট করা হয়েছে #DP-ORD-2026-005",
+      "targetId": "DP-ORD-2026-005",
+      "timestamp": "2026-10-19T01:08:25.666Z"
+    },
+    {
+      "id": "aud-1792372105663-3r4p",
+      "action": "ORDER_STATUS_CHANGED",
+      "actor": "ayanislam10000@gmail.com",
+      "details": "অর্ডার #DP-ORD-2026-005 এর স্ট্যাটাস 'paid' থেকে 'in_progress'-এ পরিবর্তিত হয়েছে। ",
+      "targetId": "DP-ORD-2026-005",
+      "timestamp": "2026-10-19T01:08:25.663Z"
+    },
+    {
+      "id": "aud-1792372105660-mv7r",
+      "action": "PAYMENT_VERIFIED",
+      "actor": "ayanislam10000@gmail.com",
+      "details": "পেমেন্ট নিশ্চিত করা হয়েছে: ৳2000 (TrxID: BKASH1792372105650)",
+      "targetId": "DP-ORD-2026-005",
+      "timestamp": "2026-10-19T01:08:25.660Z"
+    },
+    {
+      "id": "aud-1792372105653-6tkh",
+      "action": "PAYMENT_SUBMITTED",
+      "actor": "customer_1792372105612@testcorp.com",
+      "details": "পেমেন্ট তথ্য জমা দিয়েছে: BKASH1792372105650 (৳2000)",
+      "targetId": "DP-ORD-2026-005",
+      "timestamp": "2026-10-19T01:08:25.653Z"
+    },
+    {
+      "id": "aud-1792372105648-kkpl",
+      "action": "QUOTATION_ACCEPTED",
+      "actor": "customer_1792372105612@testcorp.com",
+      "details": "কাস্টমার কোটেশন গ্রহণ করেছেন #DP-ORD-2026-005",
+      "targetId": "DP-ORD-2026-005",
+      "timestamp": "2026-10-19T01:08:25.648Z"
+    },
+    {
+      "id": "aud-1792372105644-fret",
+      "action": "QUOTATION_SENT",
+      "actor": "ayanislam10000@gmail.com",
+      "details": "কোটেশন পাঠানো হয়েছে #DP-ORD-2026-005: ৳2000",
+      "targetId": "DP-ORD-2026-005",
+      "timestamp": "2026-10-19T01:08:25.644Z"
+    },
+    {
+      "id": "aud-1792372105637-0r9g",
+      "action": "ORDER_CREATED",
+      "actor": "customer_1792372105612@testcorp.com",
+      "details": "নতুন অর্ডার তৈরি হয়েছে: DP-ORD-2026-005 (মূল্য: ৳1500)",
+      "targetId": "DP-ORD-2026-005",
+      "timestamp": "2026-10-19T01:08:25.637Z"
+    },
+    {
+      "id": "aud-1792372105633-sbys",
+      "action": "USER_LOGIN",
+      "actor": "ayanislam10000@gmail.com",
+      "details": "লগইন সম্পন্ন: Ayan Islam (DevPilot Admin) (admin)",
+      "targetId": "usr-admin-001",
+      "timestamp": "2026-10-19T01:08:25.633Z"
+    },
+    {
+      "id": "aud-1792372105626-dmwd",
+      "action": "USER_REGISTERED",
+      "actor": "customer_1792372105612@testcorp.com",
+      "details": "নতুন কাস্টমার একাউন্ট রেজিস্টার হয়েছে: Rahim Chowdhury",
+      "targetId": "usr-1792372105626-nz30",
+      "timestamp": "2026-10-19T01:08:25.626Z"
+    },
+    {
+      "id": "aud-1792370909950-xxu0",
+      "action": "EXPENSE_RECORDED",
+      "actor": "ayanislam10000@gmail.com",
+      "details": "অপারেশনাল খরচ লিপিবদ্ধ: Vercel Pro & Domain Renewal (৳500)",
+      "targetId": "exp-1792370909950-6qq2",
+      "timestamp": "2026-10-19T00:48:29.950Z"
+    },
+    {
+      "id": "aud-1792370909948-ml1w",
+      "action": "ORDER_COMPLETED",
+      "actor": "customer_1792370909903@testcorp.com",
+      "details": "অর্ডার সফলভাবে সম্পন্ন হয়েছে #DP-ORD-2026-004",
+      "targetId": "DP-ORD-2026-004",
+      "timestamp": "2026-10-19T00:48:29.948Z"
+    },
+    {
+      "id": "aud-1792370909945-fait",
+      "action": "DELIVERY_SUBMITTED",
+      "actor": "ayanislam10000@gmail.com",
+      "details": "অর্ডারের ডেলিভারি সাবমিট করা হয়েছে #DP-ORD-2026-004",
+      "targetId": "DP-ORD-2026-004",
+      "timestamp": "2026-10-19T00:48:29.945Z"
+    },
+    {
+      "id": "aud-1792370909943-kmfx",
+      "action": "REVISION_REQUESTED",
+      "actor": "customer_1792370909903@testcorp.com",
+      "details": "রিভিশন চাওয়া হয়েছে #DP-ORD-2026-004: Please adjust hamburger button tap target size on small screens.",
+      "targetId": "DP-ORD-2026-004",
+      "timestamp": "2026-10-19T00:48:29.943Z"
+    },
+    {
+      "id": "aud-1792370909941-cp4z",
+      "action": "DELIVERY_SUBMITTED",
+      "actor": "ayanislam10000@gmail.com",
+      "details": "অর্ডারের ডেলিভারি সাবমিট করা হয়েছে #DP-ORD-2026-004",
+      "targetId": "DP-ORD-2026-004",
+      "timestamp": "2026-10-19T00:48:29.941Z"
+    },
+    {
+      "id": "aud-1792370909938-tzcm",
+      "action": "ORDER_STATUS_CHANGED",
+      "actor": "ayanislam10000@gmail.com",
+      "details": "অর্ডার #DP-ORD-2026-004 এর স্ট্যাটাস 'paid' থেকে 'in_progress'-এ পরিবর্তিত হয়েছে। ",
+      "targetId": "DP-ORD-2026-004",
+      "timestamp": "2026-10-19T00:48:29.938Z"
+    },
+    {
+      "id": "aud-1792370909936-r2su",
+      "action": "PAYMENT_VERIFIED",
+      "actor": "ayanislam10000@gmail.com",
+      "details": "পেমেন্ট নিশ্চিত করা হয়েছে: ৳2000 (TrxID: BKASH1792370909928)",
+      "targetId": "DP-ORD-2026-004",
+      "timestamp": "2026-10-19T00:48:29.936Z"
+    },
+    {
+      "id": "aud-1792370909930-52g4",
+      "action": "PAYMENT_SUBMITTED",
+      "actor": "customer_1792370909903@testcorp.com",
+      "details": "পেমেন্ট তথ্য জমা দিয়েছে: BKASH1792370909928 (৳2000)",
+      "targetId": "DP-ORD-2026-004",
+      "timestamp": "2026-10-19T00:48:29.930Z"
+    },
+    {
+      "id": "aud-1792370909926-jf6x",
+      "action": "QUOTATION_ACCEPTED",
+      "actor": "customer_1792370909903@testcorp.com",
+      "details": "কাস্টমার কোটেশন গ্রহণ করেছেন #DP-ORD-2026-004",
+      "targetId": "DP-ORD-2026-004",
+      "timestamp": "2026-10-19T00:48:29.926Z"
+    },
+    {
+      "id": "aud-1792370909922-5x7b",
+      "action": "QUOTATION_SENT",
+      "actor": "ayanislam10000@gmail.com",
+      "details": "কোটেশন পাঠানো হয়েছে #DP-ORD-2026-004: ৳2000",
+      "targetId": "DP-ORD-2026-004",
+      "timestamp": "2026-10-19T00:48:29.922Z"
+    },
+    {
+      "id": "aud-1792370909916-cxtr",
+      "action": "ORDER_CREATED",
+      "actor": "customer_1792370909903@testcorp.com",
+      "details": "নতুন অর্ডার তৈরি হয়েছে: DP-ORD-2026-004 (মূল্য: ৳1500)",
+      "targetId": "DP-ORD-2026-004",
+      "timestamp": "2026-10-19T00:48:29.916Z"
+    },
+    {
+      "id": "aud-1792370909913-ztqk",
+      "action": "USER_LOGIN",
+      "actor": "ayanislam10000@gmail.com",
+      "details": "লগইন সম্পন্ন: Ayan Islam (DevPilot Admin) (admin)",
+      "targetId": "usr-admin-001",
+      "timestamp": "2026-10-19T00:48:29.913Z"
+    },
+    {
+      "id": "aud-1792370909907-zmuj",
+      "action": "USER_REGISTERED",
+      "actor": "customer_1792370909903@testcorp.com",
+      "details": "নতুন কাস্টমার একাউন্ট রেজিস্টার হয়েছে: Rahim Chowdhury",
+      "targetId": "usr-1792370909906-g8kd",
+      "timestamp": "2026-10-19T00:48:29.907Z"
+    },
+    {
+      "id": "aud-1792370899027-g8jj",
+      "action": "EXPENSE_RECORDED",
+      "actor": "ayanislam10000@gmail.com",
+      "details": "অপারেশনাল খরচ লিপিবদ্ধ: Vercel Pro & Domain Renewal (৳500)",
+      "targetId": "exp-1792370899027-gpmf",
+      "timestamp": "2026-10-19T00:48:19.027Z"
+    },
+    {
+      "id": "aud-1792370899025-nxt0",
+      "action": "ORDER_COMPLETED",
+      "actor": "customer_1792370898982@testcorp.com",
+      "details": "অর্ডার সফলভাবে সম্পন্ন হয়েছে #DP-ORD-2026-003",
+      "targetId": "DP-ORD-2026-003",
+      "timestamp": "2026-10-19T00:48:19.025Z"
+    },
+    {
+      "id": "aud-1792370899023-8v7m",
+      "action": "DELIVERY_SUBMITTED",
+      "actor": "ayanislam10000@gmail.com",
+      "details": "অর্ডারের ডেলিভারি সাবমিট করা হয়েছে #DP-ORD-2026-003",
+      "targetId": "DP-ORD-2026-003",
+      "timestamp": "2026-10-19T00:48:19.023Z"
+    },
+    {
+      "id": "aud-1792370899021-wvxo",
+      "action": "REVISION_REQUESTED",
+      "actor": "customer_1792370898982@testcorp.com",
+      "details": "রিভিশন চাওয়া হয়েছে #DP-ORD-2026-003: Please adjust hamburger button tap target size on small screens.",
+      "targetId": "DP-ORD-2026-003",
+      "timestamp": "2026-10-19T00:48:19.021Z"
+    },
+    {
+      "id": "aud-1792370899019-9pq2",
+      "action": "DELIVERY_SUBMITTED",
+      "actor": "ayanislam10000@gmail.com",
+      "details": "অর্ডারের ডেলিভারি সাবমিট করা হয়েছে #DP-ORD-2026-003",
+      "targetId": "DP-ORD-2026-003",
+      "timestamp": "2026-10-19T00:48:19.019Z"
+    },
+    {
+      "id": "aud-1792370899017-yy1a",
+      "action": "ORDER_STATUS_CHANGED",
+      "actor": "ayanislam10000@gmail.com",
+      "details": "অর্ডার #DP-ORD-2026-003 এর স্ট্যাটাস 'paid' থেকে 'in_progress'-এ পরিবর্তিত হয়েছে। ",
+      "targetId": "DP-ORD-2026-003",
+      "timestamp": "2026-10-19T00:48:19.017Z"
+    },
+    {
+      "id": "aud-1792370899014-huhu",
+      "action": "PAYMENT_VERIFIED",
+      "actor": "ayanislam10000@gmail.com",
+      "details": "পেমেন্ট নিশ্চিত করা হয়েছে: ৳2000 (TrxID: BKASH1792370899007)",
+      "targetId": "DP-ORD-2026-003",
+      "timestamp": "2026-10-19T00:48:19.014Z"
+    },
+    {
+      "id": "aud-1792370899009-zxtn",
+      "action": "PAYMENT_SUBMITTED",
+      "actor": "customer_1792370898982@testcorp.com",
+      "details": "পেমেন্ট তথ্য জমা দিয়েছে: BKASH1792370899007 (৳2000)",
+      "targetId": "DP-ORD-2026-003",
+      "timestamp": "2026-10-19T00:48:19.009Z"
+    },
+    {
+      "id": "aud-1792370899006-gdt8",
+      "action": "QUOTATION_ACCEPTED",
+      "actor": "customer_1792370898982@testcorp.com",
+      "details": "কাস্টমার কোটেশন গ্রহণ করেছেন #DP-ORD-2026-003",
+      "targetId": "DP-ORD-2026-003",
+      "timestamp": "2026-10-19T00:48:19.006Z"
+    },
+    {
+      "id": "aud-1792370899003-xnt9",
+      "action": "QUOTATION_SENT",
+      "actor": "ayanislam10000@gmail.com",
+      "details": "কোটেশন পাঠানো হয়েছে #DP-ORD-2026-003: ৳2000",
+      "targetId": "DP-ORD-2026-003",
+      "timestamp": "2026-10-19T00:48:19.003Z"
+    },
+    {
+      "id": "aud-1792370898997-cwpy",
+      "action": "ORDER_CREATED",
+      "actor": "customer_1792370898982@testcorp.com",
+      "details": "নতুন অর্ডার তৈরি হয়েছে: DP-ORD-2026-003 (মূল্য: ৳1500)",
+      "targetId": "DP-ORD-2026-003",
+      "timestamp": "2026-10-19T00:48:18.997Z"
+    },
+    {
+      "id": "aud-1792370898993-ncdb",
+      "action": "USER_LOGIN",
+      "actor": "ayanislam10000@gmail.com",
+      "details": "লগইন সম্পন্ন: Ayan Islam (DevPilot Admin) (admin)",
+      "targetId": "usr-admin-001",
+      "timestamp": "2026-10-19T00:48:18.993Z"
+    },
+    {
+      "id": "aud-1792370898986-r3bw",
+      "action": "USER_REGISTERED",
+      "actor": "customer_1792370898982@testcorp.com",
+      "details": "নতুন কাস্টমার একাউন্ট রেজিস্টার হয়েছে: Rahim Chowdhury",
+      "targetId": "usr-1792370898986-mdxf",
+      "timestamp": "2026-10-19T00:48:18.986Z"
+    },
+    {
+      "id": "aud-1792370874543-1qyw",
+      "action": "EXPENSE_RECORDED",
+      "actor": "ayanislam10000@gmail.com",
+      "details": "অপারেশনাল খরচ লিপিবদ্ধ: Vercel Pro & Domain Renewal (৳500)",
+      "targetId": "exp-1792370874543-9tuc",
+      "timestamp": "2026-10-19T00:47:54.543Z"
+    },
+    {
+      "id": "aud-1792370874541-tzvj",
+      "action": "ORDER_COMPLETED",
+      "actor": "customer_1792370874496@testcorp.com",
+      "details": "অর্ডার সফলভাবে সম্পন্ন হয়েছে #DP-ORD-2026-002",
+      "targetId": "DP-ORD-2026-002",
+      "timestamp": "2026-10-19T00:47:54.541Z"
+    },
+    {
+      "id": "aud-1792370874539-v2hg",
+      "action": "DELIVERY_SUBMITTED",
+      "actor": "ayanislam10000@gmail.com",
+      "details": "অর্ডারের ডেলিভারি সাবমিট করা হয়েছে #DP-ORD-2026-002",
+      "targetId": "DP-ORD-2026-002",
+      "timestamp": "2026-10-19T00:47:54.539Z"
+    },
+    {
+      "id": "aud-1792370874537-zrui",
+      "action": "REVISION_REQUESTED",
+      "actor": "customer_1792370874496@testcorp.com",
+      "details": "রিভিশন চাওয়া হয়েছে #DP-ORD-2026-002: Please adjust hamburger button tap target size on small screens.",
+      "targetId": "DP-ORD-2026-002",
+      "timestamp": "2026-10-19T00:47:54.537Z"
+    },
+    {
+      "id": "aud-1792370874535-jsxk",
+      "action": "DELIVERY_SUBMITTED",
+      "actor": "ayanislam10000@gmail.com",
+      "details": "অর্ডারের ডেলিভারি সাবমিট করা হয়েছে #DP-ORD-2026-002",
+      "targetId": "DP-ORD-2026-002",
+      "timestamp": "2026-10-19T00:47:54.535Z"
+    },
+    {
+      "id": "aud-1792370874532-y8q8",
+      "action": "ORDER_STATUS_CHANGED",
+      "actor": "ayanislam10000@gmail.com",
+      "details": "অর্ডার #DP-ORD-2026-002 এর স্ট্যাটাস 'paid' থেকে 'in_progress'-এ পরিবর্তিত হয়েছে। ",
+      "targetId": "DP-ORD-2026-002",
+      "timestamp": "2026-10-19T00:47:54.532Z"
+    },
+    {
+      "id": "aud-1792370874529-tcky",
+      "action": "PAYMENT_VERIFIED",
+      "actor": "ayanislam10000@gmail.com",
+      "details": "পেমেন্ট নিশ্চিত করা হয়েছে: ৳2000 (TrxID: BKASH1792370874523)",
+      "targetId": "DP-ORD-2026-002",
+      "timestamp": "2026-10-19T00:47:54.529Z"
+    },
+    {
+      "id": "aud-1792370874525-defg",
+      "action": "PAYMENT_SUBMITTED",
+      "actor": "customer_1792370874496@testcorp.com",
+      "details": "পেমেন্ট তথ্য জমা দিয়েছে: BKASH1792370874523 (৳2000)",
+      "targetId": "DP-ORD-2026-002",
+      "timestamp": "2026-10-19T00:47:54.525Z"
+    },
+    {
+      "id": "aud-1792370874521-jgx6",
+      "action": "QUOTATION_ACCEPTED",
+      "actor": "customer_1792370874496@testcorp.com",
+      "details": "কাস্টমার কোটেশন গ্রহণ করেছেন #DP-ORD-2026-002",
+      "targetId": "DP-ORD-2026-002",
+      "timestamp": "2026-10-19T00:47:54.521Z"
+    },
+    {
+      "id": "aud-1792370874518-febe",
+      "action": "QUOTATION_SENT",
+      "actor": "ayanislam10000@gmail.com",
+      "details": "কোটেশন পাঠানো হয়েছে #DP-ORD-2026-002: ৳2000",
+      "targetId": "DP-ORD-2026-002",
+      "timestamp": "2026-10-19T00:47:54.518Z"
+    },
+    {
+      "id": "aud-1792370874512-letz",
+      "action": "ORDER_CREATED",
+      "actor": "customer_1792370874496@testcorp.com",
+      "details": "নতুন অর্ডার তৈরি হয়েছে: DP-ORD-2026-002 (মূল্য: ৳1500)",
+      "targetId": "DP-ORD-2026-002",
+      "timestamp": "2026-10-19T00:47:54.512Z"
+    },
+    {
+      "id": "aud-1792370874507-mqb8",
+      "action": "USER_LOGIN",
+      "actor": "ayanislam10000@gmail.com",
+      "details": "লগইন সম্পন্ন: Ayan Islam (DevPilot Admin) (admin)",
+      "targetId": "usr-admin-001",
+      "timestamp": "2026-10-19T00:47:54.507Z"
+    },
+    {
+      "id": "aud-1792370874500-rctt",
+      "action": "USER_REGISTERED",
+      "actor": "customer_1792370874496@testcorp.com",
+      "details": "নতুন কাস্টমার একাউন্ট রেজিস্টার হয়েছে: Rahim Chowdhury",
+      "targetId": "usr-1792370874500-zn85",
+      "timestamp": "2026-10-19T00:47:54.500Z"
+    },
+    {
+      "id": "aud-1792370859314-wmkg",
+      "action": "EXPENSE_RECORDED",
+      "actor": "ayanislam10000@gmail.com",
+      "details": "অপারেশনাল খরচ লিপিবদ্ধ: Vercel Pro & Domain Renewal (৳500)",
+      "targetId": "exp-1792370859314-262d",
+      "timestamp": "2026-10-19T00:47:39.314Z"
+    },
+    {
+      "id": "aud-1792370859312-f4ff",
+      "action": "ORDER_COMPLETED",
+      "actor": "customer_1792370859246@testcorp.com",
+      "details": "অর্ডার সফলভাবে সম্পন্ন হয়েছে #DP-ORD-2026-001",
+      "targetId": "DP-ORD-2026-001",
+      "timestamp": "2026-10-19T00:47:39.312Z"
+    },
+    {
+      "id": "aud-1792370859311-zvmb",
+      "action": "DELIVERY_SUBMITTED",
+      "actor": "ayanislam10000@gmail.com",
+      "details": "অর্ডারের ডেলিভারি সাবমিট করা হয়েছে #DP-ORD-2026-001",
+      "targetId": "DP-ORD-2026-001",
+      "timestamp": "2026-10-19T00:47:39.311Z"
+    },
+    {
+      "id": "aud-1792370859308-p5b8",
+      "action": "REVISION_REQUESTED",
+      "actor": "customer_1792370859246@testcorp.com",
+      "details": "রিভিশন চাওয়া হয়েছে #DP-ORD-2026-001: Please adjust hamburger button tap target size on small screens.",
+      "targetId": "DP-ORD-2026-001",
+      "timestamp": "2026-10-19T00:47:39.308Z"
+    },
+    {
+      "id": "aud-1792370859304-0vl6",
+      "action": "DELIVERY_SUBMITTED",
+      "actor": "ayanislam10000@gmail.com",
+      "details": "অর্ডারের ডেলিভারি সাবমিট করা হয়েছে #DP-ORD-2026-001",
+      "targetId": "DP-ORD-2026-001",
+      "timestamp": "2026-10-19T00:47:39.304Z"
+    },
+    {
+      "id": "aud-1792370859302-c4gl",
+      "action": "ORDER_STATUS_CHANGED",
+      "actor": "ayanislam10000@gmail.com",
+      "details": "অর্ডার #DP-ORD-2026-001 এর স্ট্যাটাস 'paid' থেকে 'in_progress'-এ পরিবর্তিত হয়েছে। ",
+      "targetId": "DP-ORD-2026-001",
+      "timestamp": "2026-10-19T00:47:39.302Z"
+    },
+    {
+      "id": "aud-1792370859300-byiq",
+      "action": "PAYMENT_VERIFIED",
+      "actor": "ayanislam10000@gmail.com",
+      "details": "পেমেন্ট নিশ্চিত করা হয়েছে: ৳2000 (TrxID: BKASH1792370859292)",
+      "targetId": "DP-ORD-2026-001",
+      "timestamp": "2026-10-19T00:47:39.300Z"
+    },
+    {
+      "id": "aud-1792370859294-r33d",
+      "action": "PAYMENT_SUBMITTED",
+      "actor": "customer_1792370859246@testcorp.com",
+      "details": "পেমেন্ট তথ্য জমা দিয়েছে: BKASH1792370859292 (৳2000)",
+      "targetId": "DP-ORD-2026-001",
+      "timestamp": "2026-10-19T00:47:39.294Z"
+    },
+    {
+      "id": "aud-1792370859290-xmd0",
+      "action": "QUOTATION_ACCEPTED",
+      "actor": "customer_1792370859246@testcorp.com",
+      "details": "কাস্টমার কোটেশন গ্রহণ করেছেন #DP-ORD-2026-001",
+      "targetId": "DP-ORD-2026-001",
+      "timestamp": "2026-10-19T00:47:39.290Z"
+    },
+    {
+      "id": "aud-1792370859286-emkh",
+      "action": "QUOTATION_SENT",
+      "actor": "ayanislam10000@gmail.com",
+      "details": "কোটেশন পাঠানো হয়েছে #DP-ORD-2026-001: ৳2000",
+      "targetId": "DP-ORD-2026-001",
+      "timestamp": "2026-10-19T00:47:39.286Z"
+    },
+    {
+      "id": "aud-1792370859272-t1lr",
+      "action": "ORDER_CREATED",
+      "actor": "customer_1792370859246@testcorp.com",
+      "details": "নতুন অর্ডার তৈরি হয়েছে: DP-ORD-2026-001 (মূল্য: ৳1500)",
+      "targetId": "DP-ORD-2026-001",
+      "timestamp": "2026-10-19T00:47:39.272Z"
+    },
+    {
+      "id": "aud-1792370859267-nfcj",
+      "action": "USER_LOGIN",
+      "actor": "ayanislam10000@gmail.com",
+      "details": "লগইন সম্পন্ন: Ayan Islam (DevPilot Admin) (admin)",
+      "targetId": "usr-admin-001",
+      "timestamp": "2026-10-19T00:47:39.268Z"
+    },
+    {
+      "id": "aud-1792370859261-v2x0",
+      "action": "USER_REGISTERED",
+      "actor": "customer_1792370859246@testcorp.com",
+      "details": "নতুন কাস্টমার একাউন্ট রেজিস্টার হয়েছে: Rahim Chowdhury",
+      "targetId": "usr-1792370859260-iyoz",
+      "timestamp": "2026-10-19T00:47:39.261Z"
+    }
+  ],
+  "privateFiles": [],
+  "settings": {
+    "brandName": "DevPilot Platform",
+    "contactEmail": "support@devpilot.app",
+    "contactPhone": "+880 1800-000000",
+    "whatsappNumber": "+8801800000000",
+    "paymentConfig": {
+      "bkashNumber": "01712-345678",
+      "bkashType": "Personal",
+      "bkashInstructionsBn": "বিকাশ অ্যাপ থেকে Send Money করুন এবং প্রাপ্ত Transaction ID এখানে জমা দিন।",
+      "bkashInstructionsEn": "Use Send Money in bKash App and submit the Transaction ID here.",
+      "nagadNumber": "01812-345678",
+      "nagadType": "Personal",
+      "nagadInstructionsBn": "নগদ একাউন্টে সেন্ড মানি করে TrxID সংগ্রহ করুন।",
+      "nagadInstructionsEn": "Send money to Nagad and copy the TrxID.",
+      "rocketNumber": "01912-345678-9",
+      "rocketType": "Personal",
+      "bankName": "City Bank Ltd / BRAC Bank",
+      "accountName": "DevPilot Digital Solutions",
+      "accountNumber": "150-123456-7890",
+      "branchName": "Gulshan-2, Dhaka",
+      "routingNumber": "225275357"
+    },
+    "aiAssistantEnabled": true,
+    "aiDailyLimitPerUser": 25
+  }
+}

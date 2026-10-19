@@ -1,6 +1,6 @@
 {
-  "appId": "com.lifegraph.finops",
-  "appName": "LIFEGRAPH FinOps",
+  "appId": "com.devpilot.app",
+  "appName": "DevPilot",
   "webDir": "dist",
   "server": {
     "androidScheme": "https"

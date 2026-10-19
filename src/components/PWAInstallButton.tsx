@@ -123,6 +123,16 @@ export const PWAInstallButton: React.FC<PWAInstallButtonProps> = ({ onOpenWorkfl
                     <Download className="h-4 w-4 shrink-0" />
                     Download APK (1.3 MB)
                   </a>
+                  <a
+                    href="/lifegraph-finops-release.zip"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    download="lifegraph-finops-release.zip"
+                    className="inline-flex items-center justify-center gap-1.5 px-3 py-2.5 text-xs font-semibold text-blue-900 bg-blue-100 hover:bg-blue-200 border border-blue-200 rounded-md transition-colors text-center"
+                  >
+                    <FileCode className="h-3.5 w-3.5 text-blue-700 shrink-0" />
+                    সম্পূর্ণ রিলিজ প্যাকেজ (.ZIP 3.0 MB)
+                  </a>
                   <button
                     type="button"
                     onClick={() => {
@@ -131,7 +141,7 @@ export const PWAInstallButton: React.FC<PWAInstallButtonProps> = ({ onOpenWorkfl
                       setCopiedLink(true);
                       setTimeout(() => setCopiedLink(false), 2500);
                     }}
-                    className="inline-flex items-center justify-center gap-1.5 px-3 py-2.5 text-xs font-medium text-blue-900 bg-blue-100 hover:bg-blue-200 rounded-md transition-colors"
+                    className="inline-flex items-center justify-center gap-1.5 px-3 py-2.5 text-xs font-medium text-slate-700 bg-white border border-slate-300 hover:bg-slate-50 rounded-md transition-colors"
                   >
                     {copiedLink ? (
                       <>
@@ -141,7 +151,7 @@ export const PWAInstallButton: React.FC<PWAInstallButtonProps> = ({ onOpenWorkfl
                     ) : (
                       <>
                         <Copy className="h-3.5 w-3.5 shrink-0" />
-                        লিংক কপি করুন
+                        APK লিংক
                       </>
                     )}
                   </button>

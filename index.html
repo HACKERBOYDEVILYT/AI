@@ -3,23 +3,23 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>LIFEGRAPH FinOps & Bangladesh Payout Admin</title>
-    <meta name="description" content="Owner-only financial ledger, AI job revenue verification, and Bangladesh Bank/Payoneer withdrawal administration console for LIFEGRAPH." />
-    <meta property="og:title" content="LIFEGRAPH FinOps & Bangladesh Payout Admin" />
-    <meta property="og:description" content="Owner-only financial ledger, AI job revenue verification, and Bangladesh Bank/Payoneer withdrawal administration console for LIFEGRAPH." />
+    <title>DevPilot — ডিজিটাল সার্ভিস ও সফটওয়্যার ইঞ্জিনিয়ারিং প্ল্যাটফর্ম</title>
+    <meta name="description" content="DevPilot — ওয়েবসাইট বাগ ফিক্সিং, ল্যান্ডিং পেজ তৈরি, এপিআই ইন্টিগ্রেশন ও ডিজিটাল সার্ভিস প্ল্যাটফর্ম। প্রফেশনাল ডেভেলপার সার্ভিস ও রিয়েল-টাইম অর্ডার ট্র্যাকিং।" />
+    <meta property="og:title" content="DevPilot — ডিজিটাল সার্ভিস ও সফটওয়্যার ইঞ্জিনিয়ারিং প্ল্যাটফর্ম" />
+    <meta property="og:description" content="DevPilot — ওয়েবসাইট বাগ ফিক্সিং, ল্যান্ডিং পেজ তৈরি, এপিআই ইন্টিগ্রেশন ও ডিজিটাল সার্ভিস প্ল্যাটফর্ম। প্রফেশনাল ডেভেলপার সার্ভিস ও রিয়েল-টাইম অর্ডার ট্র্যাকিং।" />
     <meta property="og:type" content="website" />
     <meta name="twitter:card" content="summary_large_image" />
     <meta name="theme-color" content="#0f172a" />
     <meta name="mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-status-bar-style" content="default" />
-    <meta name="apple-mobile-web-app-title" content="LIFEGRAPH" />
+    <meta name="apple-mobile-web-app-title" content="DevPilot" />
     <link rel="manifest" href="./manifest.webmanifest" />
     <link rel="apple-touch-icon" href="./apple-touch-icon.png" />
     <link rel="icon" type="image/svg+xml" href="./icon.svg" />
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Hind+Siliguri:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <script>
       // Manage Service Workers: In iframe preview unregister to avoid stale cache; in top-level window register for WebAPK
       var isIframe = window.self !== window.top;
@@ -33,25 +33,22 @@
         } else {
           window.addEventListener('load', function() {
             navigator.serviceWorker.register('/sw.js', { scope: '/' }).catch(function(err) {
-              console.warn('PWA ServiceWorker note:', err);
+              console.warn('DevPilot PWA note:', err);
             });
           });
         }
       }
     </script>
   </head>
-  <body class="bg-slate-50 text-slate-900 antialiased">
+  <body class="bg-slate-50 text-slate-900 antialiased font-sans">
     <div id="root">
-      <div style="min-height:100vh;display:flex;align-items:center;justify-content:center;background-color:#0f172a;color:#ffffff;font-family:system-ui,-apple-system,sans-serif;padding:20px;">
-        <div style="max-width:420px;width:100%;text-align:center;background:#1e293b;padding:32px;border-radius:12px;border:1px solid #334155;box-shadow:0 10px 25px rgba(0,0,0,0.3);">
-          <div style="width:48px;height:48px;margin:0 auto 16px;border-radius:10px;background:#10b981;display:flex;align-items:center;justify-content:center;font-weight:bold;font-size:24px;color:#0f172a;">L</div>
-          <h1 style="font-size:18px;font-weight:700;margin:0 0 8px;letter-spacing:-0.02em;">LIFEGRAPH FinOps</h1>
-          <p style="font-size:13px;color:#94a3b8;margin:0 0 20px;line-height:1.5;">ফাইনান্সিয়াল কনসোল এবং মোবাইল অ্যাপ লোড হচ্ছে...</p>
-          <div style="width:36px;height:36px;margin:0 auto 16px;border:3px solid #334155;border-top-color:#10b981;border-radius:50%;animation:spin 1s linear infinite;"></div>
-          <div style="margin-top:20px;display:flex;gap:10px;justify-content:center;">
-            <a href="/lifegraph-finops.apk" download="lifegraph-finops-v1.0.0.apk" style="display:inline-block;padding:10px 16px;background:#2563eb;color:#ffffff;font-size:12px;font-weight:600;border-radius:6px;text-decoration:none;">Download APK (1.3 MB)</a>
-            <button onclick="window.location.reload()" style="padding:10px 16px;background:#334155;color:#f8fafc;font-size:12px;font-weight:600;border:none;border-radius:6px;cursor:pointer;">Reload</button>
-          </div>
+      <div style="min-height:100vh;display:flex;align-items:center;justify-content:center;background-color:#090d16;color:#ffffff;font-family:'Hind Siliguri','Plus Jakarta Sans',system-ui,sans-serif;padding:20px;">
+        <div style="max-width:440px;width:100%;text-align:center;background:#111827;padding:36px;border-radius:16px;border:1px solid #1f2937;box-shadow:0 20px 40px rgba(0,0,0,0.5);">
+          <div style="width:54px;height:54px;margin:0 auto 16px;border-radius:14px;background:linear-gradient(135deg,#2563eb,#3b82f6);display:flex;align-items:center;justify-content:center;font-weight:bold;font-size:26px;color:#ffffff;box-shadow:0 8px 16px rgba(37,99,235,0.35);">DP</div>
+          <h1 style="font-size:20px;font-weight:700;margin:0 0 8px;letter-spacing:-0.02em;color:#f8fafc;">DevPilot Platform</h1>
+          <p style="font-size:13px;color:#94a3b8;margin:0 0 24px;line-height:1.6;">ডিজিটাল সার্ভিস ও ইঞ্জিনিয়ারিং কনসোল লোড হচ্ছে...</p>
+          <div style="width:36px;height:36px;margin:0 auto 20px;border:3px solid #1f2937;border-top-color:#3b82f6;border-radius:50%;animation:spin 1s linear infinite;"></div>
+          <button onclick="window.location.reload()" style="padding:10px 18px;background:#1f2937;color:#e2e8f0;font-size:12px;font-weight:600;border:1px solid #374151;border-radius:8px;cursor:pointer;">রিলোড করুন</button>
         </div>
       </div>
       <style>@keyframes spin{to{transform:rotate(360deg)}}</style>
