@@ -1326,6 +1326,8 @@ export const CustomerDashboard: React.FC<CustomerDashboardProps> = ({
             </form>
           </div>
         </div>
+      )}
+
       {/* Live Browser Preview Modal */}
       {previewHtml && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-6 bg-slate-950/80 backdrop-blur-md animate-fade-in">

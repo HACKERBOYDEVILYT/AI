@@ -86,7 +86,7 @@ async function runTests() {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         email: 'ayanislam10000@gmail.com',
-        password: 'admin123',
+        password: 'robiul1000',
       }),
     });
     assert.strictEqual(res.status, 200);

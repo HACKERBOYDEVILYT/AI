@@ -98,8 +98,11 @@ export interface OrderAttachment {
 
 export interface DeliverySubmission {
   notes: string;
-  files: Array<{ name: string; url: string; sizeKb?: number }>;
+  files: Array<{ name: string; url: string; sizeKb?: number; code?: string }>;
   submittedAt: string;
+  aiGenerated?: boolean;
+  livePreviewHtml?: string;
+  deliverableFiles?: Array<{ name: string; code: string; description?: string }>;
 }
 
 export interface OrderTimelineEvent {
