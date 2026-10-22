@@ -306,6 +306,8 @@ const SAMPLE_ORDERS: OrderRecord[] = [
       },
     ],
     revisionRequests: [],
+    aiRevenueVerified: true,
+    aiRevenueVerifiedAt: '2026-10-15T11:15:00.000Z',
     createdAt: '2026-10-15T10:30:00.000Z',
     updatedAt: '2026-10-15T16:30:00.000Z',
   },
@@ -337,6 +339,8 @@ const SAMPLE_ORDERS: OrderRecord[] = [
     },
     deliveries: [],
     revisionRequests: [],
+    aiRevenueVerified: true,
+    aiRevenueVerifiedAt: '2026-10-16T09:30:00.000Z',
     createdAt: '2026-10-16T08:30:00.000Z',
     updatedAt: '2026-10-16T09:30:00.000Z',
   },
@@ -366,6 +370,7 @@ const SAMPLE_ORDERS: OrderRecord[] = [
     },
     deliveries: [],
     revisionRequests: [],
+    aiRevenueVerified: false,
     createdAt: '2026-10-17T13:45:00.000Z',
     updatedAt: '2026-10-17T14:00:00.000Z',
   },
@@ -1019,6 +1024,8 @@ export function verifyOrderPayment(orderId: string, adminEmail: string): void {
   order.payment.verifiedAt = new Date().toISOString();
   order.payment.verifiedBy = adminEmail;
   order.paymentStatus = 'paid';
+  order.aiRevenueVerified = true;
+  order.aiRevenueVerifiedAt = order.payment.verifiedAt;
 
   if (order.status === 'awaiting_payment' || order.status === 'quotation_sent' || order.status === 'pending') {
     order.status = 'paid';
@@ -1042,6 +1049,43 @@ export function verifyOrderPayment(orderId: string, adminEmail: string): void {
     `Verified TrxID ${order.payment.trxId} of BDT ${order.payment.amountBdt} for order ${orderId}`,
     orderId
   );
+}
+
+export function verifyRevenueWithAI(orderId: string, actor: string = 'DevPilot AI Sentinel'): OrderRecord | undefined {
+  const all = getOrders();
+  const order = all.find((o) => o.id === orderId);
+  if (!order) return undefined;
+
+  const now = new Date().toISOString();
+  order.aiRevenueVerified = true;
+  order.aiRevenueVerifiedAt = now;
+  if (order.payment) {
+    order.payment.verifiedAt = now;
+    order.payment.verifiedBy = actor;
+    order.paymentStatus = 'paid';
+  } else {
+    order.paymentStatus = 'paid';
+  }
+  order.updatedAt = now;
+
+  if (!order.progressTimeline) order.progressTimeline = [];
+  order.progressTimeline.unshift({
+    status: order.status,
+    titleBn: 'এআই সিস্টেম কর্তৃক আর্থিক রাজস্ব ভেরিফাইড',
+    titleEn: 'Revenue Verified by AI System',
+    note: `Automated AI ledger audit verified revenue of ৳${order.quotationAmountBdt || order.priceBdt} BDT for order ${order.id}.`,
+    actor,
+    timestamp: now,
+  });
+
+  writeStorage(STORAGE_KEYS.ORDERS, all);
+  logAuditEvent(
+    'AI_REVENUE_VERIFIED',
+    actor,
+    `AI System verified job revenue for #${order.id} (৳${order.quotationAmountBdt || order.priceBdt})`,
+    order.id
+  );
+  return order;
 }
 
 export function rejectOrderPayment(orderId: string, reason: string, adminEmail: string): void {

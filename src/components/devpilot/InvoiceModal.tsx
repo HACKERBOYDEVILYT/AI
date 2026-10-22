@@ -8,6 +8,7 @@ import {
   AlertCircle,
   Code2,
   Building,
+  Sparkles,
 } from 'lucide-react';
 import { Language, OrderRecord, ThemeMode } from '../../types/devpilot';
 import { translations } from '../../locales/translations';
@@ -216,6 +217,23 @@ export const InvoiceModal: React.FC<InvoiceModalProps> = ({
                   </p>
                 </div>
               )}
+
+              {/* Visual Status Badge for AI Revenue Verification */}
+              <div className="pt-2 border-t border-slate-200 flex items-center justify-between text-xs">
+                <span className="text-slate-500 font-semibold">AI Revenue Status:</span>
+                {order.aiRevenueVerified || (order.paymentStatus === 'paid' && order.payment?.verifiedAt) ? (
+                  <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-300 shadow-2xs">
+                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                    <Sparkles className="w-3 h-3 text-emerald-600" />
+                    <span>Verified</span>
+                  </span>
+                ) : (
+                  <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-amber-50 text-amber-700 border border-amber-300 shadow-2xs">
+                    <Clock className="w-3 h-3 text-amber-600" />
+                    <span>Pending Review</span>
+                  </span>
+                )}
+              </div>
             </div>
 
             {/* Total Math */}

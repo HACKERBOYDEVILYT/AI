@@ -31,6 +31,7 @@ import {
   ArrowDownLeft,
   ChevronLeft,
   ChevronRight,
+  Sparkles,
 } from 'lucide-react';
 import {
   AuditLog,
@@ -65,6 +66,7 @@ import {
   updateOrderStatus,
   sendOrderQuotation,
   verifyOrderPayment,
+  verifyRevenueWithAI,
   rejectOrderPayment,
   submitOrderDelivery,
   addExpense,
@@ -120,6 +122,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
   const [orderSearch, setOrderSearch] = useState('');
   const [orderStatusFilter, setOrderStatusFilter] = useState<string>('all');
   const [dateRangeFilter, setDateRangeFilter] = useState<'all' | 'today' | '7days' | 'month'>('all');
+  const [paymentFilter, setPaymentFilter] = useState<'pending' | 'all' | 'verified'>('pending');
   const [orderPage, setOrderPage] = useState(1);
   const ordersPerPage = 8;
 
@@ -247,6 +250,44 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
   const handleVerifyPayment = (orderId: string) => {
     verifyOrderPayment(orderId, currentUser?.email || SUPER_ADMIN_EMAIL);
     refreshAllData();
+  };
+
+  const handleAiVerifyRevenue = (orderId: string) => {
+    verifyRevenueWithAI(orderId, currentUser?.email || 'DevPilot AI Sentinel');
+    refreshAllData();
+  };
+
+  const renderAiRevenueStatusBadge = (ord: OrderRecord, compact: boolean = false) => {
+    const isVerified = Boolean(
+      ord.aiRevenueVerified || (ord.paymentStatus === 'paid' && ord.payment?.verifiedAt)
+    );
+
+    if (isVerified) {
+      return (
+        <span
+          className={`inline-flex items-center gap-1.5 font-bold rounded-full border shadow-2xs transition-all ${
+            compact ? 'px-2 py-0.5 text-[10px]' : 'px-2.5 py-1 text-xs'
+          } bg-emerald-50 text-emerald-700 dark:bg-emerald-950/70 dark:text-emerald-300 border-emerald-300 dark:border-emerald-700/80`}
+          title={isBn ? 'এআই সিস্টেম কর্তৃক রাজস্ব ভেরিফাইড (AI Verified)' : 'Revenue Verified by AI system'}
+        >
+          <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+          <Sparkles className={`${compact ? 'w-3 h-3' : 'w-3.5 h-3.5'} text-emerald-600 dark:text-emerald-400`} />
+          <span className="tracking-wide">Verified</span>
+        </span>
+      );
+    }
+
+    return (
+      <span
+        className={`inline-flex items-center gap-1.5 font-bold rounded-full border shadow-2xs transition-all ${
+          compact ? 'px-2 py-0.5 text-[10px]' : 'px-2.5 py-1 text-xs'
+        } bg-amber-50 text-amber-700 dark:bg-amber-950/70 dark:text-amber-300 border-amber-300 dark:border-amber-700/80`}
+        title={isBn ? 'এআই সিস্টেমের পর্যালোচনা অপেক্ষমান (Pending Review)' : 'Revenue Pending Review by AI system'}
+      >
+        <Clock className={`${compact ? 'w-3 h-3' : 'w-3.5 h-3.5'} text-amber-600 dark:text-amber-400`} />
+        <span className="tracking-wide">Pending Review</span>
+      </span>
+    );
   };
 
   const handleRejectPayment = (orderId: string) => {
@@ -392,9 +433,29 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
     return true;
   });
 
-  const pendingPaymentsList = orders.filter(
-    (o) => o.paymentStatus === 'verification_pending' && o.payment
-  );
+  const pendingPaymentsList = useMemo(() => {
+    return orders.filter(
+      (o) =>
+        (o.paymentStatus === 'verification_pending' && o.payment) ||
+        (o.payment && !o.payment.verifiedAt && !o.aiRevenueVerified)
+    );
+  }, [orders]);
+
+  const allPaymentOrders = useMemo(() => {
+    return orders.filter((o) => o.payment || o.paymentStatus === 'paid' || o.aiRevenueVerified);
+  }, [orders]);
+
+  const verifiedPaymentsList = useMemo(() => {
+    return orders.filter(
+      (o) => o.aiRevenueVerified || (o.paymentStatus === 'paid' && o.payment?.verifiedAt)
+    );
+  }, [orders]);
+
+  const displayedPaymentsList = useMemo(() => {
+    if (paymentFilter === 'all') return allPaymentOrders;
+    if (paymentFilter === 'verified') return verifiedPaymentsList;
+    return pendingPaymentsList;
+  }, [paymentFilter, allPaymentOrders, verifiedPaymentsList, pendingPaymentsList]);
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8 animate-fade-in">
@@ -650,6 +711,127 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
               </div>
             </div>
           </div>
+
+          {/* Individual Financial Records & AI Revenue Audit Ledger */}
+          <div
+            className={`p-6 rounded-2xl border space-y-4 ${
+              isDark ? 'bg-slate-850 border-slate-800' : 'bg-white border-slate-200'
+            }`}
+          >
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b pb-4 border-slate-200 dark:border-slate-800">
+              <div>
+                <div className="flex items-center gap-2">
+                  <div className="p-1.5 rounded-lg bg-emerald-500/10 text-emerald-600 dark:text-emerald-400">
+                    <DollarSign className="w-4 h-4" />
+                  </div>
+                  <h3 className="text-sm font-bold text-slate-900 dark:text-white">
+                    {isBn ? 'ব্যক্তিগত আর্থিক রেকর্ড ও এআই রাজস্ব নিরীক্ষা' : 'Individual Financial Records & AI Revenue Audit'}
+                  </h3>
+                </div>
+                <p className="text-xs text-slate-500 mt-1">
+                  {isBn
+                    ? 'প্রতিটি সার্ভিসের আর্থিক মূল্য এবং এআই সিস্টেম কর্তৃক নিরীক্ষিত স্ট্যাটাস (Verified / Pending Review)।'
+                    : "Individual job revenue records with AI system verification badges ('Verified' or 'Pending Review')."}
+                </p>
+              </div>
+
+              <div className="flex items-center gap-2">
+                <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300">
+                  <span className="w-2 h-2 rounded-full bg-emerald-500" />
+                  <span>
+                    {orders.filter((o) => o.aiRevenueVerified || (o.paymentStatus === 'paid' && o.payment?.verifiedAt)).length} {isBn ? 'যাচাইকৃত' : 'Verified'}
+                  </span>
+                  <span className="text-slate-400">|</span>
+                  <span className="w-2 h-2 rounded-full bg-amber-500" />
+                  <span>
+                    {orders.filter((o) => !(o.aiRevenueVerified || (o.paymentStatus === 'paid' && o.payment?.verifiedAt))).length} {isBn ? 'পর্যালোচনা বাকি' : 'Pending Review'}
+                  </span>
+                </span>
+              </div>
+            </div>
+
+            <div className="overflow-x-auto">
+              <table className="w-full text-left text-xs border-collapse">
+                <thead className="bg-slate-50 dark:bg-slate-800/60 border-b border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 font-bold uppercase">
+                  <tr>
+                    <th className="py-2.5 px-3">Job ID</th>
+                    <th className="py-2.5 px-3">Client</th>
+                    <th className="py-2.5 px-3">Service / Job Title</th>
+                    <th className="py-2.5 px-3">Payment Info</th>
+                    <th className="py-2.5 px-3 text-right">Revenue (BDT)</th>
+                    <th className="py-2.5 px-3 text-center">AI Revenue Status</th>
+                    <th className="py-2.5 px-3 text-right">Actions</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-100 dark:divide-slate-800 text-slate-800 dark:text-slate-200">
+                  {orders.map((ord) => {
+                    const isVerified = Boolean(
+                      ord.aiRevenueVerified || (ord.paymentStatus === 'paid' && ord.payment?.verifiedAt)
+                    );
+                    const revenueBdt = ord.quotationAmountBdt || ord.priceBdt;
+
+                    return (
+                      <tr key={ord.id} className="hover:bg-slate-50/50 dark:hover:bg-slate-800/40 transition">
+                        <td className="py-3 px-3 font-mono font-bold text-blue-600 dark:text-blue-400 whitespace-nowrap">
+                          {ord.id}
+                        </td>
+                        <td className="py-3 px-3">
+                          <p className="font-bold">{ord.customerName}</p>
+                          <p className="text-[10px] text-slate-400">{ord.customerEmail}</p>
+                        </td>
+                        <td className="py-3 px-3 max-w-[200px] truncate text-slate-600 dark:text-slate-300">
+                          {isBn ? ord.serviceTitleBn : ord.serviceTitleEn}
+                        </td>
+                        <td className="py-3 px-3">
+                          {ord.payment ? (
+                            <div className="space-y-0.5">
+                              <span className="font-mono uppercase font-bold text-[10px] px-1.5 py-0.5 rounded bg-slate-100 dark:bg-slate-800 text-pink-600 dark:text-pink-400">
+                                {ord.payment.method}
+                              </span>
+                              <p className="font-mono text-[10px] text-slate-400 truncate max-w-[120px]">
+                                {ord.payment.trxId}
+                              </p>
+                            </div>
+                          ) : (
+                            <span className="text-slate-400 text-[11px]">—</span>
+                          )}
+                        </td>
+                        <td className="py-3 px-3 text-right font-mono font-bold text-sm">
+                          ৳ {revenueBdt.toLocaleString()}
+                        </td>
+                        <td className="py-3 px-3 text-center whitespace-nowrap">
+                          {renderAiRevenueStatusBadge(ord)}
+                        </td>
+                        <td className="py-3 px-3 text-right">
+                          <div className="flex items-center justify-end gap-1.5">
+                            {!isVerified && (
+                              <button
+                                type="button"
+                                onClick={() => handleAiVerifyRevenue(ord.id)}
+                                className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-purple-600 hover:bg-purple-700 text-white font-bold text-[11px] shadow-2xs transition"
+                                title={isBn ? 'এআই সিস্টেম দিয়ে রাজস্ব ভেরিফাই করুন' : 'Verify revenue with AI Sentinel'}
+                              >
+                                <Sparkles className="w-3 h-3" />
+                                <span>AI Verify</span>
+                              </button>
+                            )}
+                            <button
+                              type="button"
+                              onClick={() => onViewInvoice(ord)}
+                              className="p-1 rounded-lg border hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-500"
+                              title="Invoice"
+                            >
+                              <Receipt className="w-3.5 h-3.5" />
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+          </div>
         </div>
       )}
 
@@ -706,13 +888,14 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
                   <th className="py-3 px-4">Status</th>
                   <th className="py-3 px-4">Payment</th>
                   <th className="py-3 px-4 text-right">Price (BDT)</th>
+                  <th className="py-3 px-4 text-center">AI Revenue Status</th>
                   <th className="py-3 px-4 text-right">Actions</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-200 dark:divide-slate-800 text-slate-800 dark:text-slate-200">
                 {filteredOrders.length === 0 ? (
                   <tr>
-                    <td colSpan={7} className="py-8 text-center text-slate-400">
+                    <td colSpan={8} className="py-8 text-center text-slate-400">
                       {isBn ? 'কোনো অর্ডার পাওয়া যায়নি।' : 'No orders matching filter.'}
                     </td>
                   </tr>
@@ -763,8 +946,23 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
                       <td className="py-3.5 px-4 text-right font-mono font-bold">
                         ৳ {(ord.quotationAmountBdt || ord.priceBdt).toLocaleString()}
                       </td>
+                      <td className="py-3.5 px-4 text-center whitespace-nowrap">
+                        {renderAiRevenueStatusBadge(ord)}
+                      </td>
                       <td className="py-3.5 px-4 text-right">
                         <div className="flex items-center justify-end gap-1.5">
+                          {/* AI Verify Revenue if pending review */}
+                          {!(ord.aiRevenueVerified || (ord.paymentStatus === 'paid' && ord.payment?.verifiedAt)) && (
+                            <button
+                              type="button"
+                              onClick={() => handleAiVerifyRevenue(ord.id)}
+                              className="p-1.5 rounded-lg border hover:bg-purple-50 dark:hover:bg-purple-950/40 text-purple-600 border-purple-200 dark:border-purple-800 transition"
+                              title={isBn ? 'এআই সিস্টেম দিয়ে রাজস্ব ভেরিফাই করুন' : 'Verify Revenue with AI Sentinel'}
+                            >
+                              <Sparkles className="w-3.5 h-3.5" />
+                            </button>
+                          )}
+
                           {/* Send Quotation button if pending */}
                           <button
                             type="button"
@@ -815,16 +1013,60 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
       {/* ========================================================================= */}
       {activeTab === 'payments' && (
         <div className="space-y-4">
-          <div className="flex items-center justify-between">
-            <h2 className="text-base font-bold text-slate-900 dark:text-white">
-              {isBn ? 'পেমেন্ট ট্রানজেকশন ভেরিফিকেশন' : 'Payment Transaction Verifications'}
-            </h2>
-            <span className="text-xs text-slate-500">
-              {pendingPaymentsList.length} {isBn ? 'টি পেন্ডিং' : 'pending approval'}
-            </span>
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b pb-4 border-slate-200 dark:border-slate-800">
+            <div>
+              <h2 className="text-base font-bold text-slate-900 dark:text-white">
+                {isBn ? 'পেমেন্ট ট্রানজেকশন ও আর্থিক রাজস্ব নিরীক্ষা' : 'Payment Transactions & Revenue Verification'}
+              </h2>
+              <p className="text-xs text-slate-500 mt-0.5">
+                {isBn
+                  ? 'গ্রাহকদের সাবমিটকৃত ট্রানজেকশন আইডি ও এআই সিস্টেম কর্তৃক রাজস্ব ভেরিফিকেশন স্ট্যাটাস।'
+                  : "Review client payment submissions and individual job revenue statuses ('Verified' or 'Pending Review')."}
+              </p>
+            </div>
+
+            {/* Filter Pills */}
+            <div className="flex items-center gap-1.5 overflow-x-auto pb-1">
+              <button
+                type="button"
+                onClick={() => setPaymentFilter('pending')}
+                className={`px-3 py-1.5 rounded-xl text-xs font-bold transition flex items-center gap-1.5 ${
+                  paymentFilter === 'pending'
+                    ? 'bg-amber-600 text-white shadow-sm'
+                    : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-700'
+                }`}
+              >
+                <Clock className="w-3.5 h-3.5" />
+                <span>{isBn ? 'পেন্ডিং' : 'Pending Review'} ({pendingPaymentsList.length})</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => setPaymentFilter('all')}
+                className={`px-3 py-1.5 rounded-xl text-xs font-bold transition flex items-center gap-1.5 ${
+                  paymentFilter === 'all'
+                    ? 'bg-blue-600 text-white shadow-sm'
+                    : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-700'
+                }`}
+              >
+                <DollarSign className="w-3.5 h-3.5" />
+                <span>{isBn ? 'সকল রেকর্ড' : 'All Records'} ({allPaymentOrders.length})</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => setPaymentFilter('verified')}
+                className={`px-3 py-1.5 rounded-xl text-xs font-bold transition flex items-center gap-1.5 ${
+                  paymentFilter === 'verified'
+                    ? 'bg-emerald-600 text-white shadow-sm'
+                    : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-700'
+                }`}
+              >
+                <Sparkles className="w-3.5 h-3.5" />
+                <span>{isBn ? 'ভেরিফাইড' : 'AI Verified'} ({verifiedPaymentsList.length})</span>
+              </button>
+            </div>
           </div>
 
-          {pendingPaymentsList.length === 0 ? (
+          {displayedPaymentsList.length === 0 ? (
             <div
               className={`p-10 text-center rounded-2xl border ${
                 isDark ? 'bg-slate-850 border-slate-800' : 'bg-white border-slate-200'
@@ -833,81 +1075,128 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
               <CheckCircle2 className="w-8 h-8 text-emerald-500 mx-auto mb-2" />
               <p className="text-xs text-slate-500">
                 {isBn
-                  ? 'কোনো অনিষ্পন্ন পেমেন্ট নেই! সকল সাবমিশন যাচাই করা হয়েছে।'
-                  : 'All payments verified. No pending transactions.'}
+                  ? 'কোনো লেনদেন পাওয়া যায়নি।'
+                  : 'No financial records matching this filter.'}
               </p>
             </div>
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {pendingPaymentsList.map((ord) => (
-                <div
-                  key={ord.id}
-                  className={`p-5 rounded-2xl border space-y-4 ${
-                    isDark ? 'bg-slate-850 border-slate-800' : 'bg-white border-slate-200'
-                  }`}
-                >
-                  <div className="flex items-center justify-between border-b pb-3 border-slate-200 dark:border-slate-800">
-                    <div>
-                      <span className="font-mono text-xs font-bold text-blue-600 block">
-                        {ord.id}
-                      </span>
-                      <h4 className="text-sm font-bold">{ord.customerName}</h4>
-                      <p className="text-[11px] text-slate-400">{ord.customerEmail}</p>
-                    </div>
-                    <div className="text-right">
-                      <span className="text-[10px] text-slate-400 block font-semibold uppercase">
-                        Amount
-                      </span>
-                      <span className="font-mono text-lg font-black text-emerald-600 dark:text-emerald-400">
-                        ৳ {ord.payment?.amountBdt.toLocaleString()}
-                      </span>
-                    </div>
-                  </div>
+              {displayedPaymentsList.map((ord) => {
+                const isVerified = Boolean(
+                  ord.aiRevenueVerified || (ord.paymentStatus === 'paid' && ord.payment?.verifiedAt)
+                );
 
-                  <div className="space-y-1.5 text-xs bg-slate-50 dark:bg-slate-900 p-3 rounded-xl border border-slate-200 dark:border-slate-800">
-                    <div className="flex justify-between">
-                      <span className="text-slate-500">Gateway:</span>
-                      <span className="font-mono uppercase font-bold text-pink-600">
-                        {ord.payment?.method}
-                      </span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-slate-500">TrxID:</span>
-                      <span className="font-mono font-black text-slate-900 dark:text-white">
-                        {ord.payment?.trxId}
-                      </span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-slate-500">Sender Account:</span>
-                      <span className="font-mono">{ord.payment?.senderAccount}</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-slate-500">Submitted:</span>
-                      <span>
-                        {new Date(ord.payment?.submittedAt || '').toLocaleString('en-GB')}
-                      </span>
-                    </div>
-                  </div>
+                return (
+                  <div
+                    key={ord.id}
+                    className={`p-5 rounded-2xl border space-y-4 ${
+                      isDark ? 'bg-slate-850 border-slate-800' : 'bg-white border-slate-200'
+                    }`}
+                  >
+                    <div className="flex items-start justify-between border-b pb-3 border-slate-200 dark:border-slate-800">
+                      <div>
+                        <span className="font-mono text-xs font-bold text-blue-600 block">
+                          {ord.id}
+                        </span>
+                        <h4 className="text-sm font-bold text-slate-900 dark:text-white">
+                          {ord.customerName}
+                        </h4>
+                        <p className="text-[11px] text-slate-400">{ord.customerEmail}</p>
+                        <p className="text-[11px] font-medium text-slate-500 mt-0.5">
+                          {isBn ? ord.serviceTitleBn : ord.serviceTitleEn}
+                        </p>
+                      </div>
 
-                  <div className="flex items-center justify-end gap-2 pt-2">
-                    <button
-                      type="button"
-                      onClick={() => handleRejectPayment(ord.id)}
-                      className="px-4 py-2 rounded-xl border border-red-300 dark:border-red-900 text-red-600 text-xs font-bold hover:bg-red-50 dark:hover:bg-red-950/40"
-                    >
-                      {t.admin.rejectPayment}
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => handleVerifyPayment(ord.id)}
-                      className="px-5 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold shadow-sm flex items-center gap-1.5"
-                    >
-                      <CheckCircle2 className="w-3.5 h-3.5" />
-                      <span>{t.admin.verifyPayment}</span>
-                    </button>
+                      <div className="text-right flex flex-col items-end gap-1.5">
+                        <span className="text-[10px] text-slate-400 block font-semibold uppercase">
+                          Revenue Amount
+                        </span>
+                        <span className="font-mono text-lg font-black text-emerald-600 dark:text-emerald-400">
+                          ৳ {(ord.payment?.amountBdt || ord.quotationAmountBdt || ord.priceBdt).toLocaleString()}
+                        </span>
+                        {renderAiRevenueStatusBadge(ord)}
+                      </div>
+                    </div>
+
+                    <div className="space-y-1.5 text-xs bg-slate-50 dark:bg-slate-900 p-3 rounded-xl border border-slate-200 dark:border-slate-800">
+                      <div className="flex justify-between">
+                        <span className="text-slate-500">Gateway:</span>
+                        <span className="font-mono uppercase font-bold text-pink-600">
+                          {ord.payment?.method || 'N/A'}
+                        </span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-slate-500">TrxID:</span>
+                        <span className="font-mono font-black text-slate-900 dark:text-white">
+                          {ord.payment?.trxId || 'Pending Submission'}
+                        </span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-slate-500">Sender Account:</span>
+                        <span className="font-mono">{ord.payment?.senderAccount || '—'}</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-slate-500">Submitted / Updated:</span>
+                        <span>
+                          {new Date(ord.payment?.submittedAt || ord.updatedAt || ord.createdAt).toLocaleString('en-GB')}
+                        </span>
+                      </div>
+                      {ord.aiRevenueVerifiedAt && (
+                        <div className="flex justify-between text-emerald-600 dark:text-emerald-400 font-semibold pt-1 border-t border-slate-200 dark:border-slate-800">
+                          <span>AI Verified At:</span>
+                          <span className="font-mono">{new Date(ord.aiRevenueVerifiedAt).toLocaleString('en-GB')}</span>
+                        </div>
+                      )}
+                    </div>
+
+                    <div className="flex items-center justify-end gap-2 pt-1">
+                      {!isVerified ? (
+                        <>
+                          <button
+                            type="button"
+                            onClick={() => handleRejectPayment(ord.id)}
+                            className="px-3.5 py-2 rounded-xl border border-red-300 dark:border-red-900 text-red-600 text-xs font-bold hover:bg-red-50 dark:hover:bg-red-950/40 transition"
+                          >
+                            {t.admin.rejectPayment}
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => handleAiVerifyRevenue(ord.id)}
+                            className="px-3.5 py-2 rounded-xl bg-purple-600 hover:bg-purple-700 text-white text-xs font-bold shadow-sm flex items-center gap-1.5 transition"
+                            title="Verify revenue with DevPilot AI Sentinel"
+                          >
+                            <Sparkles className="w-3.5 h-3.5" />
+                            <span>AI Sentinel Verify</span>
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => handleVerifyPayment(ord.id)}
+                            className="px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold shadow-sm flex items-center gap-1.5 transition"
+                          >
+                            <CheckCircle2 className="w-3.5 h-3.5" />
+                            <span>{t.admin.verifyPayment}</span>
+                          </button>
+                        </>
+                      ) : (
+                        <div className="flex items-center gap-3">
+                          <div className="flex items-center gap-1 text-xs font-bold text-emerald-600 dark:text-emerald-400">
+                            <CheckCircle2 className="w-4 h-4" />
+                            <span>{isBn ? 'রাজস্ব সম্পূর্ণ ভেরিফাইড' : 'Revenue Settled & Verified'}</span>
+                          </div>
+                          <button
+                            type="button"
+                            onClick={() => onViewInvoice(ord)}
+                            className="p-2 rounded-xl border hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-600 dark:text-slate-300 transition"
+                            title="View Invoice"
+                          >
+                            <Receipt className="w-4 h-4" />
+                          </button>
+                        </div>
+                      )}
+                    </div>
                   </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
           )}
         </div>

@@ -141,6 +141,8 @@ export interface OrderRecord {
   }>;
   refund?: RefundRecord;
   progressTimeline?: OrderTimelineEvent[];
+  aiRevenueVerified?: boolean;
+  aiRevenueVerifiedAt?: string;
   createdAt: string;
   updatedAt: string;
 }
