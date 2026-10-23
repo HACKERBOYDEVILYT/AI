@@ -65,8 +65,18 @@ export const PWAInstallModal: React.FC<PWAInstallModalProps> = ({
 
   const handleApkDownload = () => {
     setDownloadStarted(true);
-    // Link to pre-built APK endpoint
-    window.location.href = '/lifegraph-finops.apk';
+    try {
+      const a = document.createElement('a');
+      a.href = '/devpilot.apk';
+      a.download = 'devpilot-v1.0.0.apk';
+      a.target = '_blank';
+      a.rel = 'noopener noreferrer';
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+    } catch {
+      window.location.href = '/devpilot.apk';
+    }
     setTimeout(() => setDownloadStarted(false), 4000);
   };
 
