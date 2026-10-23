@@ -1,0 +1,38 @@
+{
+  "id": "/",
+  "name": "DevPilot — ডিজিটাল সার্ভিস ও সফটওয়্যার প্ল্যাটফর্ম",
+  "short_name": "DevPilot",
+  "description": "ওয়েবসাইট বাগ ফিক্সিং, ল্যান্ডিং পেজ তৈরি, এপিআই ইন্টিগ্রেশন ও ডিজিটাল সার্ভিস প্ল্যাটফর্ম।",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "background_color": "#090d16",
+  "theme_color": "#2563eb",
+  "orientation": "portrait-primary",
+  "icons": [
+    {
+      "src": "/pwa-192x192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/pwa-512x512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/pwa-512x512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    },
+    {
+      "src": "/icon.svg",
+      "sizes": "192x192 512x512",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    }
+  ]
+}
